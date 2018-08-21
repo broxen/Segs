@@ -37,6 +37,7 @@ public:
         void    serializeto(BitStream &bs) const;
         void    serializefrom(BitStream &/*src*/);
 };
+#include "Events/AddTimeStateLog.h"
 #include "Events/ChatMessage.h"
 #include "Events/StandardDialogCmd.h"
 #include "Events/InfoMessageCmd.h"

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * SEGS - Super Entity Game Server
  * http://www.segs.io/
  * Copyright (c) 2006 - 2018 SEGS Team (see AUTHORS.md)
@@ -25,11 +25,18 @@ struct SurfaceParams
     float traction;
     float friction;
     float bounce;
-    float gravitational_constant;
+    float gravity;
     float max_speed;
 };
 
-extern SurfaceParams g_world_surf_params[2];
+static int reverse_control_direction[6] = {
+    BinaryControl::BACKWARD,
+    BinaryControl::FORWARD,
+    BinaryControl::RIGHT,
+    BinaryControl::LEFT,
+    BinaryControl::DOWN,
+    BinaryControl::UP,
+};
 
 enum CollFlags // TODO: Move to Collision file
 {
@@ -82,17 +89,17 @@ enum MoveType
     MOVETYPE_JETPACK    = 0x10,
 };
 
-struct MotionState
+struct MotionState // current derived state of motion
 {
-    bool            m_is_walking            = false; // 0
+    bool            m_is_falling            = false; // 0
     bool            m_is_stunned            = false; //
     bool            m_is_flying             = false; // 2
     bool            m_is_jumping            = false; // 3
-    bool            m_is_falling            = false; // 0
     bool            m_is_bouncing           = false; // 6 , maybe repulsion? true when jumping
     bool            m_is_sliding            = false; // 8, 9, 10
     bool            m_has_jumppack          = false; //
     bool            m_has_headpain          = false; // formerly recover_from_landing_timer, but only used as bool?
+    bool            m_is_slowed             = false; //
     bool            m_controls_disabled     = false; //
     bool            m_no_collision          = false; //
     uint8_t         m_motion_state_id       = 1;
@@ -103,6 +110,8 @@ struct MotionState
     bool            m_flag_5                = false; // 5 no idea, true when jumping
     bool            m_flag_12               = false; // 12 no idea, low friction?
     bool            m_flag_13               = false; // 13 no idea, increased traction?
+    bool            m_flag_14               = false; // 14 no idea
+    bool            m_flag_15               = false; // 15 no idea
 
     glm::vec3       m_velocity;
     glm::vec3       m_input_velocity;
@@ -111,6 +120,7 @@ struct MotionState
     StuckType       m_stuck                 = StuckType::STUCK_NONE;
     StuckType       m_stuck_head            = StuckType::STUCK_NONE;
 
+    float           m_velocity_scale        = 0.0f;
     float           m_move_time             = 0.0f;
     float           m_backup_spd            = 1.0f;
     float           m_jump_height           = 2.0f;
@@ -118,8 +128,12 @@ struct MotionState
     float           m_jump_apex             = 0.0f;
     int             m_jump_time             = 0;
     int             m_walk_flags            = 0;
+    int             m_coll_surf_flags       = 0;
+    int             m_field_88              = 0;
 
     glm::vec3       m_surf_normal;
+    glm::vec3       m_surf_normal2;
+    glm::vec3       m_surf_normal3;
     glm::vec3       m_surf_repulsion;
 
     SurfaceParams   m_surf_mods[2] = { {0,0,0,0,0},
@@ -132,7 +146,10 @@ void my_entMoveNoColl(Entity *ent);
 
 // These should eventually be private
 void setVelocity(Entity &e);
+void entWorldCollide(Entity *ent, SurfaceParams *surface_params);
+bool checkHead(Entity *ent, int val);
 void checkFeet(Entity &e, SurfaceParams &surf_params);
+int slideWall(glm::vec3 *bottom, Entity *ent, glm::vec3 *top);
 void entWorldGetSurface(Entity *ent, SurfaceParams *surf_params);
 
 void addPosUpdate(Entity &e, const PosUpdate &p);

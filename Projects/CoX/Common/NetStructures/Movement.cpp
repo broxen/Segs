@@ -22,26 +22,17 @@
 
 #include <glm/gtx/vector_query.hpp>
 #include <glm/ext.hpp>
+#include <chrono>
 
 static glm::mat3    s_identity_matrix = glm::mat3(1.0f);
 static int          s_landed_on_ground = 0;
+//static CollInfo     s_last_surf;
 
-SurfaceParams g_world_surf_params[2] = {
+static SurfaceParams s_world_surf_params[2] = {
     // traction, friction, bounce, gravity, max_speed
     { 1.00f, 0.45f, 0.01f, 0.065f, 1.00f }, // ground; from client
     { 0.02f, 0.01f, 0.00f, 0.065f, 1.00f }  // air; from client
 };
-
-/* can replace with: glm::vec3 reflect = glm::reflect(incident, norm);
-static void f_reflect(glm::vec3 *norm, glm::vec3 *reflect, glm::vec3 *incident)
-{
-    glm::vec3 working_vec   = *incident;
-    float normalized_vec    = working_vec.normalize(); // glm::normalize(working_vec);
-    float dot_product       = norm->dot(- working_vec);
-    // update reflection
-    *reflect = (2*dot_product * *norm + working_vec) * normalized_vec;
-}
-*/
 
 void roundVelocityToZero(glm::vec3 *vel)
 {
@@ -80,6 +71,46 @@ void processDirectionControl(InputState *next_state, uint8_t dir, int prev_time,
         case 4:
         case 5: next_state->m_pos_delta_valid[1] = true; break;
     }
+}
+
+void pmotionUpdateControlsPrePhysics(Entity *ent, InputState *controls, std::chrono::steady_clock::time_point cur_time)
+{
+    uint16_t press_time_ms;
+
+    unsigned int is_jumping = ent->m_motion_state.m_is_jumping;
+    for(int i = 0; !is_jumping && i <= BinaryControl::LAST_BINARY_VALUE; ++i )
+    {
+        is_jumping |= (controls->m_keypress_time[i] >= 250); // if any control is above 250ms then all below 250 will be set to 250
+    }
+
+    for(int ctrl_id = 0; ctrl_id <= BinaryControl::LAST_BINARY_VALUE; ++ctrl_id )
+    {
+        if(controls->m_controls_disabled && !ent->m_player->m_options.alwaysmobile)
+        {
+            controls->m_keypress_time[ctrl_id] = 0;
+            continue;
+        }
+
+        if(!controls->m_control_bits[ctrl_id] || controls->m_control_bits[reverse_control_direction[ctrl_id]]) // not pressed or pressed both direction at once
+            continue;
+
+        press_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - controls->m_keypress_start[ctrl_id]).count();
+        controls->m_keypress_time[ctrl_id] += press_time_ms;
+
+        if ( is_jumping && controls->m_keypress_time[ctrl_id] < 250 )
+        {
+            controls->m_keypress_time[ctrl_id] = 250;
+        }
+        else if ( controls->m_keypress_time[ctrl_id] > 1000 )
+        {
+            controls->m_keypress_time[ctrl_id] = 1000;
+        }
+    }
+}
+
+int checkEntColl(Entity *ent, int bouncing)
+{
+    // Do collision checks
 }
 
 void setVelocity(Entity &e)
@@ -208,10 +239,10 @@ void my_entMoveNoColl(Entity *ent)
 
     qCDebug(logMovement) << "BEFORE: m_pos_delta:" << glm::to_string(ent->m_states.current()->m_pos_delta).c_str()
                          << "time_scale:" << time_scale
-                         << "timestamp:" << ent->m_states.current()->m_time_state.m_timestep
+                         << "timestep:" << ent->m_states.current()->m_time_state.m_timestep // use time_rel1C instead
                          << "velocity:" << glm::to_string(ent->m_velocity).c_str();
 
-    ent->m_states.current()->m_pos_delta += time_scale * ent->m_states.current()->m_time_state.m_timestep * ent->m_velocity/255; // formerly inp_vel
+    ent->m_states.current()->m_pos_delta += time_scale * ent->m_states.current()->m_time_state.m_timestep * ent->m_velocity; // formerly inp_vel
     ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta; // save pos_delta to motion_state instead?
 
     qCDebug(logMovement) << "m_pos no coll" << glm::to_string(ent->m_entity_data.m_pos).c_str();
@@ -223,9 +254,9 @@ void my_entMoveNoColl(Entity *ent)
 void entWorldGetSurface(Entity *ent, SurfaceParams *surf_params)
 {
     if (ent->m_motion_state.m_is_falling || ent->m_motion_state.m_is_flying)
-        *surf_params = g_world_surf_params[1];
+        *surf_params = s_world_surf_params[1];
     else
-        *surf_params = g_world_surf_params[0];
+        *surf_params = s_world_surf_params[0];
 
     if(!(ent->m_motion_state.m_is_falling || ent->m_motion_state.m_is_flying))
     {
@@ -252,7 +283,7 @@ SurfaceParams *getSurfaceModifier(Entity *e)
 
     if (e->m_motion_state.m_is_flying || e->m_motion_state.m_is_jumping)
     {
-        surf.gravitational_constant = 0;
+        surf.gravity = 0;
         return &surf;
     }
 
@@ -271,7 +302,7 @@ void entWorldApplySurfMods(SurfaceParams *surf1, SurfaceParams *surf2)
     surf2->traction = surf1->traction * surf2->traction;
     surf2->friction = surf1->friction * surf2->friction;
     surf2->bounce   = surf1->bounce * surf2->bounce;
-    surf2->gravitational_constant  = surf1->gravitational_constant * surf2->gravitational_constant;
+    surf2->gravity  = surf1->gravity * surf2->gravity;
     surf2->max_speed = surf1->max_speed * surf2->max_speed;
 }
 
@@ -306,22 +337,22 @@ void checkJump(Entity *ent, InputState *new_state, SurfaceParams *surf_params)
     if(ent->m_move_type & MoveType::MOVETYPE_FLY)
         return;
 
-    if(ent->m_velocity.y > 0.001f) // formerly: input_vel
+    if(ent->m_motion_state.m_input_velocity.y > 0.001f) // formerly: input_vel
     {
         if ((new_state && ent->m_motion_state.m_is_stunned)
                 || (!ent->m_motion_state.m_has_jumppack && ent->m_motion_state.m_surf_normal.y <= 0.3f))
         {
-            ent->m_velocity.y = 0; // formerly: input_vel
+            ent->m_motion_state.m_input_velocity.y = 0; // formerly: input_vel
         }
         else
             want_jump = true;
     }
 
-    if (ent->m_velocity.y > 0.0f && ent->m_motion_state.m_has_jumppack
+    if (ent->m_motion_state.m_velocity.y > 0.0f && ent->m_motion_state.m_has_jumppack
          && (!want_jump && !(ent->m_move_type & MoveType::MOVETYPE_JETPACK)))
     {
         ent->m_motion_state.m_has_jumppack = false;
-        ent->m_velocity.y -= std::min(1.5f, ent->m_velocity.y) * 0.5f;
+        ent->m_motion_state.m_velocity.y -= std::min(1.5f, ent->m_velocity.y) * 0.5f;
     }
 
     bool not_moving_on_yaxis = !(ent->m_motion_state.m_is_falling
@@ -329,19 +360,22 @@ void checkJump(Entity *ent, InputState *new_state, SurfaceParams *surf_params)
                                  || ent->m_motion_state.m_jump_time > 0
                                  || ent->m_move_type & MoveType::MOVETYPE_JETPACK);
 
-    if (!ent->m_motion_state.m_is_jumping && want_jump)
+    if(!ent->m_motion_state.m_is_jumping)
     {
-        if (!not_moving_on_yaxis || ent->m_motion_state.m_flag_5)
-            ent->m_velocity.y = 0; // formerly: inp_vel.y
-        else
+        if(want_jump)
         {
-            ent->m_motion_state.m_is_jumping        = true;
-            ent->m_motion_state.m_is_bouncing       = true;
-            ent->m_motion_state.m_jump_height       = ent->m_motion_state.m_jump_height;        // formerly: ent->mat4.TranslationPart.y
-            ent->m_motion_state.m_max_jump_height   = ent->m_motion_state.m_jump_height * 4.0;  // formerly: cur_state ? cur_state.jump_height * 4.0 : 4.0f
-            ent->m_motion_state.m_jump_time         = 15;
-            ent->m_motion_state.m_has_jumppack      = true;
-            ent->m_motion_state.m_flag_5            = true;
+            if(!not_moving_on_yaxis || ent->m_motion_state.m_flag_5)
+                ent->m_motion_state.m_input_velocity.y = 0;
+            else
+            {
+                ent->m_motion_state.m_is_jumping        = true;
+                ent->m_motion_state.m_is_bouncing       = true;
+                ent->m_motion_state.m_jump_height       = ent->m_states.current()->m_pos_delta.y;        // formerly: ent->mat4.TranslationPart.y
+                ent->m_motion_state.m_max_jump_height   = new_state ? ent->m_motion_state.m_jump_height * 4.0 : 4.0f;  // formerly: cur_state ? cur_state.jump_height * 4.0 : 4.0f
+                ent->m_motion_state.m_jump_time         = 15;
+                ent->m_motion_state.m_has_jumppack      = true;
+                ent->m_motion_state.m_flag_5            = true;
+            }
         }
     }
     else
@@ -370,25 +404,25 @@ void checkJump(Entity *ent, InputState *new_state, SurfaceParams *surf_params)
         // TODO: Flesh out Seq system
         ent->m_seq_state.setVal(SeqBitNames::SB_JETPACK, ent->m_motion_state.m_is_jumping);
     }
-    else if (ent->m_velocity.y != 0.0f /* formerly: input_vel */
-             && surf_params->gravitational_constant != 0.0f
+    else if (ent->m_motion_state.m_input_velocity.y != 0.0f
+             && surf_params->gravity != 0.0f
              && ent->m_motion_state.m_is_falling)
     {
-        ent->m_velocity.y = 0; // formerly: input_vel
+        ent->m_motion_state.m_input_velocity.y = 0; // formerly: input_vel
     }
 }
 
 void doPhysicsOnce(Entity *ent, SurfaceParams *surf_params)
 {
     ent->m_motion_state.m_surf_repulsion = glm::vec3(0,0,0);
-    //entWorldCollide(ent, surf_params);
-    ent->m_velocity += ent->m_motion_state.m_surf_repulsion;
+    entWorldCollide(ent, surf_params);
+    ent->m_motion_state.m_velocity += ent->m_motion_state.m_surf_repulsion;
 }
 
 void doPhysics(Entity *ent, SurfaceParams *surf_mods)
 {
     float timestep = ent->m_states.current()->m_time_state.m_timestep;
-    float mag = ent->m_velocity.length() * timestep;
+    float mag = ent->m_motion_state.m_velocity.length() * timestep;
 
     if (mag >= 1.0f || timestep >= 5.0f)
     {
@@ -412,10 +446,10 @@ void doPhysics(Entity *ent, SurfaceParams *surf_mods)
 
     if(ent->m_motion_state.m_is_falling)
     {
-        if (ent->m_velocity.y > 0.0f && ent->m_velocity.y < 0.3f)
+        if (ent->m_motion_state.m_velocity.y > 0.0f && ent->m_motion_state.m_velocity.y < 0.3f)
             ent->m_seq_state.set(SeqBitNames::SB_APEX);
 
-        if(ent->m_velocity.y < 0.0f)
+        if(ent->m_motion_state.m_velocity.y < 0.0f)
         {
             if(!(ent->m_move_type & MoveType::MOVETYPE_JETPACK))
                 ent->m_motion_state.m_is_jumping = false; // no longer counted as jump, we're falling
@@ -449,7 +483,7 @@ void entWalk(Entity *ent, InputState *new_state)
         ent->m_motion_state.m_is_bouncing = false;
 
     if(new_state)
-        ent->m_states.current()->m_velocity_scale = new_state->m_velocity_scale; // velocity?
+        ent->m_motion_state.m_velocity_scale = new_state->m_velocity_scale; // velocity?
 
     checkJump(ent, new_state, &surf_params);
     s_landed_on_ground = 0;
@@ -468,22 +502,24 @@ void entWalk(Entity *ent, InputState *new_state)
 
     if(s_landed_on_ground)
     {
-        if(ent->m_velocity.y < -2.0f)
+        if ( ent->m_motion_state.m_velocity.y < -2.0f )
         {
-            float falling_vel = std::min(2.0f, -ent->m_velocity.y - 2.0f) * 0.2f;
+            // client does camera shake here. Maybe we do something?
         }
+
         ent->m_motion_state.m_jump_apex = ent->m_states.current()->m_pos_delta.y;
     }
+
     roundVelocityToZero(&ent->m_velocity);
-    // save pos_delta to motion_state?
-    //ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta;
+    ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta;
 }
 
 void entMotion(Entity *ent, InputState *new_state)
 {
-    // Removed additional (ent->m_states.current()->m_velocity_scale == glm::vec3(0,0,0))
-    if(ent->m_motion_state.m_is_walking
-         || (ent->m_velocity == glm::vec3(0,0,0))
+    // Removed additional (ent->m_motion_state.m_inp_vel.length())
+    if(ent->m_motion_state.m_is_falling
+         || (ent->m_velocity.length())
+         || (ent->m_motion_state.m_input_velocity.length())
          || !(ent->m_move_type & MoveType::MOVETYPE_WALK)
          || (ent->m_type == EntType::PLAYER/* && checkEntColl(ent, 0)*/))
     {
@@ -495,17 +531,88 @@ void entMotion(Entity *ent, InputState *new_state)
         else if(ent->m_move_type & MoveType::MOVETYPE_WALK )
         {
             qCDebug(logMovement)<< "entMotion normal";
-            ent->m_states.current()->m_time_state.m_timestep = 0; // move_time
+            ent->m_motion_state.m_move_time = 0; // move_time
             entWalk(ent, new_state);
-            ent->m_velocity = glm::vec3(0,0,0); // formerly inp_vel
+            ent->m_motion_state.m_input_velocity = glm::vec3(0,0,0); // formerly inp_vel
         }
         else
         {
             qCDebug(logMovement)<< "entMotion we're not walking";
-            ent->m_motion_state.m_is_walking = false;
+            ent->m_motion_state.m_is_falling = false;
         }
 
         qCDebug(logMovement)<< "entMotion failed to perform";
+    }
+}
+
+void old_entWorldCollide(Entity *ent, SurfaceParams *surface)
+{
+    glm::vec3   top;
+    glm::vec3   bottom;
+    float       before;
+
+    int try_count = 0;
+    if(ent->m_states.current()->m_pos_delta.y > 900.0f)
+    {
+        float tmp_height = ent->m_motion_state.m_velocity.y;
+        ent->m_states.current()->m_pos_delta.y = 900.0f;
+
+        if(tmp_height > 0.0f)
+            ent->m_motion_state.m_velocity.y = 0;
+
+        if(ent->m_motion_state.m_is_jumping)
+        {
+            ent->m_motion_state.m_is_falling = true;
+            ent->m_motion_state.m_is_jumping = false;
+        }
+    }
+
+    while(true)
+    {
+        ++try_count;
+        top = ent->m_motion_state.m_last_pos;
+        bottom = ent->m_states.current()->m_pos_delta;
+
+        if(slideWall(&bottom, ent, &top))
+        {
+            ent->m_motion_state.m_stuck_head = StuckType::STUCK_COMPLETELY;
+            ent->m_states.current()->m_pos_delta = ent->m_motion_state.m_last_pos;
+        }
+        else
+        {
+            ent->m_motion_state.m_stuck_head = StuckType::STUCK_NONE;
+            ent->m_states.current()->m_pos_delta = top;
+        }
+
+        before = ent->m_states.current()->m_pos_delta.y;
+        checkFeet(*ent, *surface);
+
+        if(std::fabs(ent->m_states.current()->m_pos_delta.y - before) <= 0.00001f )
+            break;
+
+        if(!checkHead(ent, 0))
+            return;
+
+        if(surface->gravity != 0.0f || try_count != 1)
+        {
+            if ( ent->m_motion_state.m_velocity.y > 0.0f )
+                ent->m_motion_state.m_velocity.y = 0;
+
+            ent->m_motion_state.m_stuck_head = StuckType::STUCK_SLIDE;
+            ent->m_states.current()->m_pos_delta = ent->m_motion_state.m_last_pos;
+            return;
+        }
+
+        ent->m_states.current()->m_pos_delta.y = ent->m_motion_state.m_last_pos.y;
+    }
+
+    if(ent->m_motion_state.m_stuck_head == StuckType::STUCK_COMPLETELY && checkHead(ent, 1))
+    {
+        before = ent->m_states.current()->m_pos_delta.y;
+        checkFeet(*ent, *surface);
+
+        if(std::fabs(ent->m_states.current()->m_pos_delta.y - before) > 0.00001f)
+            ent->m_states.current()->m_pos_delta = ent->m_motion_state.m_last_pos;
     }
 }
 
@@ -629,9 +736,265 @@ void motionSetSequence(Entity *ent, InputState *new_state)
     }
 }
 
+void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
+{
+    glm::vec3 dv;
+    SurfaceParams surf;
+    glm::mat3 surf_mat;
+    glm::vec3 up(0,1,0); // formerly 0,0,1?? why z?
+    glm::vec3 final_velocity(0,0,0);
+    glm::vec3 xvel(0,0,0);
+    glm::vec3 tvel(0,0,0);
+    glm::vec3 surf_normal = ent->m_motion_state.m_surf_normal;
+    float fractional_vel = 0.0f;
+
+    entWorldGetSurface(ent, &surf);
+    entWorldApplySurfMods(surface_params, &surf);
+
+    if(ent->m_motion_state.m_walk_flags & CollFlags::COLL_SURFACE_FLAGS) {
+        applySurfModsByFlags(&surf, ent->m_motion_state.m_walk_flags);
+    }
+    else
+    {
+        if(surf.friction > 1.0f)
+            surf.friction = 1.0f;
+        if(surf.traction > 1.0f)
+            surf.traction = 1.0f;
+    }
+
+    float friction_rel  = 1.0f - std::pow(1.0f - surf.friction, ent->m_states.current()->m_time_state.m_timestep);
+    float max_speed     = surf.max_speed;
+    float traction_rel  = 1.0f - std::pow(1.0f - surf.traction, ent->m_states.current()->m_time_state.m_timestep);
+
+    if(ent->m_motion_state.m_velocity_scale != 0.0f)
+        max_speed = surf.max_speed * ent->m_motion_state.m_velocity_scale;
+
+    if(surf.gravity != 0.0f)
+    {
+        float gravity_rel = surf.gravity;
+        if (ent->m_motion_state.m_velocity.y < 0)
+            gravity_rel = gravity_rel * 1.5f;
+        tvel.y = -(gravity_rel * ent->m_states.current()->m_time_state.m_timestep);
+    }
+
+    if(ent->m_motion_state.m_flag_14)
+    {
+        glm::vec3 *p_surf_normal = &ent->m_motion_state.m_surf_normal2;
+        if (ent->m_motion_state.m_field_88 == 1
+                && ent->m_motion_state.m_surf_normal2.y < surf_normal.y
+                && ent->m_motion_state.m_velocity.y <= 0.0f)
+        {
+            p_surf_normal = &surf_normal;
+        }
+
+        if (glm::dot(ent->m_motion_state.m_surf_normal3, *p_surf_normal) < -0.7f)
+        {
+            ent->m_motion_state.m_is_falling = false;
+            ent->m_motion_state.m_has_jumppack = true;
+            traction_rel = 1.0;
+        }
+
+        ent->m_motion_state.m_surf_normal3 = *p_surf_normal;
+        // below: f_reflect(p_surf_normal, &dv, &tvel);
+        tvel += glm::reflect(surf_normal, tvel); // dv;
+
+        if (ent->m_motion_state.m_is_flying || p_surf_normal->y <= 0.0f)
+        {
+            final_velocity = traction_rel * ent->m_motion_state.m_input_velocity.length() * ent->m_motion_state.m_input_velocity;
+        }
+        else
+        {
+            final_velocity = ent->m_motion_state.m_input_velocity;
+            final_velocity.y = -((ent->m_motion_state.m_input_velocity.x * p_surf_normal->x + p_surf_normal->z * ent->m_motion_state.m_input_velocity.z) / p_surf_normal->y);
+            float vel_with_traction = ent->m_motion_state.m_input_velocity.length() * traction_rel;
+            if (final_velocity.y < 0.0f)
+            {
+                float v21 = 1.0f - glm::dot(tvel, final_velocity) / (tvel.length() * final_velocity.length()) * (1.0f - p_surf_normal->y);
+                max_speed = max_speed / std::max(0.1f, v21);
+            }
+            else
+            {
+                vel_with_traction *= p_surf_normal->y;
+            }
+            final_velocity *= vel_with_traction;
+        }
+
+        float traction_temp = std::min((1.0f - traction_rel) * 4.0f, 1.0f);
+        tvel = tvel * (traction_temp * 0.5f);
+        glm::mat3 surf_mat;
+
+        camLookAt(p_surf_normal, &surf_mat);
+
+
+        glm::mat3 surf_mat_inv(surf_mat);
+        glm::transpose(surf_mat_inv);
+        xvel = ent->m_motion_state.m_velocity * surf_mat_inv;
+
+        if (xvel.z > 0.0f)
+            dv = ent->m_motion_state.m_velocity;
+        else
+        {
+            glm::vec3 dvx = glm::reflect(up, xvel);
+            dvx.z = dvx.z * surf.bounce;
+            dv = dvx * surf_mat;
+        }
+
+        float dot_vel = 0.0f;
+        bool run_once = true;
+        if (final_velocity.x != 0.0f || final_velocity.y != 0.0f || final_velocity.z != 0.0f)
+        {
+            run_once = false;
+            dot_vel = glm::dot(dv, final_velocity);
+        }
+
+        if (!(ent->m_motion_state.m_is_falling || ent->m_motion_state.m_is_flying))
+        {
+            ent->m_motion_state.m_coll_surf_flags = ent->m_motion_state.m_walk_flags;
+            ent->m_motion_state.m_flag_15 = true;
+        }
+
+        float surf_rel = std::min(1.0f, float(traction_rel * 0.5f + friction_rel));
+        if ( run_once )
+        {
+            dv = (1 - friction_rel)*dv + final_velocity;
+
+        }
+        else if (dot_vel >= 0.0f)
+        {
+            float final_magnitude = 0.0f;
+            fractional_vel = 1.0f / glm::length2(final_velocity);
+            float vel_with_surf = glm::dot(-(surf_rel * dv), final_velocity) * fractional_vel;
+            dv = (1 - surf_rel)*dv - final_velocity * vel_with_surf;
+            xvel = final_velocity * glm::dot(dv, final_velocity) * fractional_vel;
+            bool run_once = true;
+
+            if (glm::length2(xvel) > max_speed * max_speed)
+            {
+                run_once = false;
+                final_magnitude = glm::length(xvel);
+            }
+
+            dv += final_velocity;
+            xvel = final_velocity * (glm::dot(dv, final_velocity) * fractional_vel);
+            if (glm::length2(xvel) > max_speed * max_speed)
+            {
+                float final_speed = max_speed;
+                if (!run_once)
+                    final_speed = (final_magnitude - max_speed) * (1.0f - friction_rel) + max_speed;
+                dv = dv + xvel*((final_speed / glm::length(xvel)) - 1);
+            }
+        }
+        else
+            dv = (1 - surf_rel) *dv + final_velocity;
+
+        ent->m_motion_state.m_velocity = tvel + dv;
+
+    }
+    else
+    {
+        if(ent->m_motion_state.m_flag_15 && !(ent->m_motion_state.m_coll_surf_flags & COLL_SURFACE_FLAGS) && ent->m_motion_state.m_velocity.y > 0.0f)
+            ent->m_motion_state.m_velocity.y = ent->m_motion_state.m_has_jumppack ? std::min(1.0f, ent->m_motion_state.m_velocity.y) : 0;
+
+        ent->m_motion_state.m_is_slowed = false;
+        ent->m_motion_state.m_flag_15 = false;
+        ent->m_motion_state.m_surf_normal3 = glm::vec3(0,0,0);
+        dv = ent->m_motion_state.m_velocity;
+        float modified_vel = glm::length(ent->m_motion_state.m_input_velocity) * traction_rel;
+        final_velocity = modified_vel * ent->m_motion_state.m_input_velocity;
+
+        float y_vel_rel = 0.0f;
+        if (ent->m_motion_state.m_is_flying)
+            y_vel_rel = 0.0;
+        else
+        {
+            y_vel_rel = ent->m_motion_state.m_velocity.y;
+            dv.y = 0.0;
+            final_velocity.y = 0.0;
+        }
+
+        if (final_velocity.x == 0.0f && final_velocity.y == 0.0f && final_velocity.z == 0.0f)
+        {
+            dv = (1 - friction_rel)*dv + final_velocity;
+        }
+        else if (glm::dot(dv, final_velocity) < 0.0f)
+        {
+            float force = std::min(1.0f, traction_rel * 0.5f + friction_rel);
+            dv = (1 - force) * dv + final_velocity;
+        }
+        else
+        {
+            friction_rel = std::min(1.0f, float(traction_rel * 0.5f + friction_rel));
+            up = -friction_rel * dv;
+            fractional_vel = 1.0f / glm::length2(final_velocity);
+            xvel = final_velocity * glm::dot(up, final_velocity) * fractional_vel;
+            dv = up - xvel + dv;
+            float dot_vel = glm::dot(dv, final_velocity) * fractional_vel;
+
+            float final_magnitude = 0.0f;
+            bool exceeded_max_spd = true;
+            if (glm::length2(dot_vel * final_velocity) > max_speed * max_speed)
+            {
+                exceeded_max_spd = false;
+                final_magnitude = glm::length(dot_vel * final_velocity);
+            }
+
+            dv += final_velocity;
+            xvel = final_velocity * (glm::dot(dv, final_velocity) * fractional_vel);
+            if (glm::length2(xvel) > max_speed * max_speed)
+            {
+                dv -= xvel;
+                float final_speed = max_speed;
+                if (!exceeded_max_spd)
+                    final_speed = (final_magnitude - max_speed) * (1.0f - friction_rel) + max_speed;
+                dv += xvel * final_speed / glm::length(xvel);
+            }
+        }
+
+        ent->m_motion_state.m_velocity = dv + tvel;
+        ent->m_motion_state.m_velocity.y += y_vel_rel;
+    }
+
+    if (ent->m_motion_state.m_is_jumping)
+        ent->m_motion_state.m_velocity.y = ent->m_motion_state.m_input_velocity.y;
+
+    ent->m_states.current()->m_pos_delta = ent->m_motion_state.m_last_pos + ent->m_motion_state.m_velocity * ent->m_states.current()->m_time_state.m_timestep;
+    checkEntColl(ent, 1);
+    old_entWorldCollide(ent, &surf);
+
+    if (ent->m_motion_state.m_is_flying
+            || ent->m_motion_state.m_velocity.y >= 0.0f
+            || !(ent->m_states.current()->m_pos_delta == ent->m_motion_state.m_last_pos)
+            || ent->m_motion_state.m_surf_normal2.y >= 0.5f)
+    {
+        //ent->m_motion_state.m_flag_14  = s_last_surf.ctri != nullptr;
+        //ent->m_motion_state.m_surf_normal2 = s_last_surf.mat.row2;
+    }
+    else
+    {
+        ent->m_motion_state.m_surf_normal = glm::vec3(0,1,0);
+        ent->m_motion_state.m_is_falling =  false;
+        ent->m_motion_state.m_has_jumppack =  false;
+        ent->m_motion_state.m_flag_14 =  true;
+        ent->m_motion_state.m_velocity.y = 0;
+    }
+
+    ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta;
+    //ent->m_motion_state.m_walk_flags = s_last_surf.ctri ? s_last_surf.ctri->flags : 0;
+}
+
+bool checkHead(Entity *ent, int val)
+{
+    // TODO: requires collision
+}
+
 void checkFeet(Entity &/*e*/, SurfaceParams &/*surf_params*/)
 {
     // TODO: implement geom collision check for feet.
+}
+
+int slideWall(glm::vec3 *bottom, Entity *ent, glm::vec3 *top)
+{
+    // TODO: requires collision
 }
 
 void addPosUpdate(Entity &e, const PosUpdate &p)

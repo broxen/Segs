@@ -455,12 +455,12 @@ void sendServerControlState(const EntitiesResponse &src,BitStream &bs)
     surface_params[0].traction = 1.0f;
     surface_params[0].friction = 0.45f;
     surface_params[0].bounce = 0.01f;
-    surface_params[0].gravitational_constant = 0.065f;
+    surface_params[0].gravity = 0.065f;
     surface_params[0].max_speed = 1.00f;
     surface_params[1].traction = 0.02f;
     surface_params[1].friction = 0.01f;
     surface_params[1].bounce = 0.00f;
-    surface_params[1].gravitational_constant = 0.065f;
+    surface_params[1].gravity = 0.065f;
     surface_params[1].max_speed = 1.00f;
 
 

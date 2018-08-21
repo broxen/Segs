@@ -20,6 +20,7 @@
 #include "NetStructures/Team.h"
 #include "NetStructures/LFG.h"
 #include "NetStructures/StateInterpolator.h"
+#include "Events/AddTimeStateLog.h"
 #include "Events/EmailHeaders.h"
 #include "Events/EmailRead.h"
 #include "Logging.h"
@@ -159,7 +160,7 @@ void    toggleCollision(Entity &e)
     e.m_motion_state.m_no_collision = !e.m_motion_state.m_no_collision;
     e.m_states.current()->m_no_collision = !e.m_states.current()->m_no_collision;
 
-    if (e.m_states.current()->m_no_collision)
+    if (e.m_motion_state.m_no_collision)
         e.m_move_type |= MoveType::MOVETYPE_NOCOLL;
     else
         e.m_move_type &= ~MoveType::MOVETYPE_NOCOLL;
@@ -598,6 +599,12 @@ void messageOutput(MessageChannel ch, QString &msg, Entity &tgt)
 /*
  * SendUpdate Wrappers to provide access to NetStructures
  */
+void sendTimeStateLog(Entity *src, uint32_t control_log)
+{
+    qCDebug(logSlashCommand, "Sending %d ControlLog %d", control_log);
+    src->m_client->addCommandToSendNextUpdate(std::unique_ptr<AddTimeStateLog>(new AddTimeStateLog(control_log)));
+}
+
 void sendFloatingNumbers(Entity *src, uint32_t tgt_idx, int32_t amount)
 {
     qCDebug(logSlashCommand, "Sending %d FloatingNumbers from %d to %d", amount, src->m_idx, tgt_idx);

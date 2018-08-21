@@ -85,6 +85,7 @@ void cmdHandler_ToggleMoveInstantly(const QString &cmd, MapClientSession &sess);
 void cmdHandler_ToggleCollision(const QString &cmd, MapClientSession &sess);
 void cmdHandler_SetSequence(const QString &cmd, MapClientSession &sess);
 void cmdHandler_AddTriggeredMove(const QString &cmd, MapClientSession &sess);
+void cmdHandler_AddTimeStateLog(const QString &cmd, MapClientSession &sess);
 void cmdHandler_SetU1(const QString &cmd, MapClientSession &sess);
 // Access Level 2[GM] Commands
 void cmdHandler_AddNPC(const QString &cmd, MapClientSession &sess);
@@ -161,6 +162,7 @@ static const SlashCommand g_defined_slash_commands[] = {
     {{"collision"},"Toggle Collision on/off", &cmdHandler_ToggleCollision, 9},
     {{"setSeq"},"Set Sequence values <update> <move_idx> <duration>", &cmdHandler_SetSequence, 9},
     {{"addTriggeredMove"},"Set TriggeredMove values <move_idx> <delay> <fx_idx>", &cmdHandler_AddTriggeredMove, 9},
+    {{"setTimeStateLog"},"Set TimeStateLog value.", cmdHandler_AddTimeStateLog, 9},
     {{"setu1"},"Set bitvalue u1. Used for live-debugging.", cmdHandler_SetU1, 9},
 
     /* Access Level 2 Commands */
@@ -737,6 +739,20 @@ void cmdHandler_AddTriggeredMove(const QString &cmd, MapClientSession &sess)
 
     QString msg = QString("Setting TriggeredMove: idx %1;  ticks: %2;  fx_idx: %3").arg(trig.m_move_idx)
             .arg(trig.m_ticks_to_delay).arg(trig.m_trigger_fx_idx);
+    qCDebug(logSlashCommand) << msg;
+    sendInfoMessage(MessageChannel::DEBUG_INFO, msg, &sess);
+}
+
+void cmdHandler_AddTimeStateLog(const QString &cmd, MapClientSession &sess)
+{
+    int val = cmd.midRef(cmd.indexOf(' ')+1).toUInt();
+
+    if(val == 0)
+        val = std::time(nullptr);
+
+    sendTimeStateLog(sess.m_ent, val);
+
+    QString msg = "Set TimeStateLog to: " + QString::number(val);
     qCDebug(logSlashCommand) << msg;
     sendInfoMessage(MessageChannel::DEBUG_INFO, msg, &sess);
 }

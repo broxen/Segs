@@ -39,6 +39,7 @@ SET(target_INCLUDE
     EntityStorage.h
     EntityUpdateCodec.h
     Events/GameCommandList.h
+    Events/AddTimeStateLog.h
     Events/ChatDividerMoved.h
     Events/ChatMessage.h
     Events/EmailHeaders.h

@@ -67,26 +67,26 @@ void World::physicsStep(Entity *e,uint32_t msec)
         e->m_motion_state.m_last_pos = e->m_entity_data.m_pos;
         float vel_scale = e->m_states.current()->m_velocity_scale/255.0f;
 
-        glm::mat3 za;
+        glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat4x4 conversion
 
         // TODO: REMOVE: FOR TESTING ONLY
         switch(e->u1)
         {
         case 1:
+            setVelocity(*e);
             entMotion(e, e->m_states.current());
+            e->m_entity_data.m_pos += e->m_motion_state.m_last_pos;
+            //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
             break;
         case 2:
             qDebug() << "m_pos no coll" << glm::to_string(e->m_entity_data.m_pos).c_str();
             my_entMoveNoColl(e);
-            e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * e->m_states.current()->m_time_state.m_timestep;
-            break;
-        case 3:
-            e->m_entity_data.m_pos += e->m_states.current()->m_pos_delta * vel_scale * float(msec)/50;
+            e->m_entity_data.m_pos += e->m_motion_state.m_last_pos;
+            //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
             break;
         default:
             setVelocity(*e);
-            za = static_cast<glm::mat3>(e->m_direction); // quat to mat4x4 conversion
-            e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
+            e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/50; // formerly divide by 50
             break;
         }
 

@@ -154,7 +154,7 @@ void initializeNewPlayerEntity(Entity &e)
     e.m_target_idx                      = 0;
     e.m_assist_target_idx               = 0;
     e.m_move_type                       = MoveType::MOVETYPE_WALK;
-    e.m_motion_state.m_is_walking       = true;
+    e.m_motion_state.m_is_falling       = true;
 
     e.m_char.reset(new Character);
     e.m_player.reset(new PlayerData);
@@ -195,7 +195,7 @@ void initializeNewNpcEntity(Entity &e, const Parse_NPC *src, int idx, int varian
     e.m_target_idx                      = 0;
     e.m_assist_target_idx               = 0;
     e.m_move_type                       = MoveType::MOVETYPE_WALK;
-    e.m_motion_state.m_is_walking       = true;
+    e.m_motion_state.m_is_falling       = true;
 
     e.m_char.reset(new Character);
     e.m_npc.reset(new NPCData{false,src,idx,variant});
