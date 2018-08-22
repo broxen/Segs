@@ -53,6 +53,7 @@ void World::physicsStep(Entity *e,uint32_t msec)
             || glm::length2(e->m_states.previous()->m_pos_delta) != glm::length2(e->m_states.current()->m_pos_delta))
     {
         // Get timestamp in ms
+        std::chrono::steady_clock::time_point tp = std::chrono::steady_clock::now();
         auto now_ms = std::chrono::steady_clock::now().time_since_epoch().count();
 
         // add PosUpdate
@@ -67,26 +68,33 @@ void World::physicsStep(Entity *e,uint32_t msec)
         e->m_motion_state.m_last_pos = e->m_entity_data.m_pos;
         float vel_scale = e->m_states.current()->m_velocity_scale/255.0f;
 
-        glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat4x4 conversion
+        glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
 
         // TODO: REMOVE: FOR TESTING ONLY
         switch(e->u1)
         {
         case 1:
+        {
+            calculateKeypressTime(e, e->m_states.current(), tp);
             setVelocity(*e);
             entMotion(e, e->m_states.current());
-            e->m_entity_data.m_pos += e->m_motion_state.m_last_pos;
+            e->m_states.current()->m_pos_delta = e->m_states.current()->m_time_state.m_timestep * (e->m_motion_state.m_last_pos - pud.m_position) + pud.m_position.x;
+            e->m_entity_data.m_pos += e->m_states.current()->m_pos_delta;
+            positionTest(e);
             //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
             break;
+        }
         case 2:
-            qDebug() << "m_pos no coll" << glm::to_string(e->m_entity_data.m_pos).c_str();
             my_entMoveNoColl(e);
             e->m_entity_data.m_pos += e->m_motion_state.m_last_pos;
+            positionTest(e);
             //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
             break;
         default:
+            calculateKeypressTime(e, e->m_states.current(), tp);
             setVelocity(*e);
             e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/50; // formerly divide by 50
+            positionTest(e);
             break;
         }
 
@@ -94,9 +102,9 @@ void World::physicsStep(Entity *e,uint32_t msec)
 
         if(e->m_type == EntType::PLAYER)
         {
-            float distance  = glm::distance(e->m_entity_data.m_pos, e->m_prev_pos);
+            float distance  = glm::distance(e->m_entity_data.m_pos, e->m_motion_state.m_last_pos);
             qCDebug(logMovement) << "physicsStep:"
-                                       << "\n    prev_pos:\t"   << glm::to_string(e->m_prev_pos).c_str()
+                                       << "\n    prev_pos:\t"   << glm::to_string(e->m_motion_state.m_last_pos).c_str()
                                        << "\n    cur_pos:\t"    << glm::to_string(e->m_entity_data.m_pos).c_str()
                                        << "\n    distance:\t"   << distance
                                        << "\n    vel_scale:\t"  << vel_scale << e->m_states.current()->m_velocity_scale

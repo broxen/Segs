@@ -73,7 +73,8 @@ void processDirectionControl(InputState *next_state, uint8_t dir, int prev_time,
     }
 }
 
-void pmotionUpdateControlsPrePhysics(Entity *ent, InputState *controls, std::chrono::steady_clock::time_point cur_time)
+// pmotionUpdateControlsPrePhysics(ent, cs, current_timestamp_ms);
+void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::steady_clock::time_point cur_time)
 {
     uint16_t press_time_ms;
 
@@ -989,7 +990,7 @@ bool checkHead(Entity *ent, int val)
 
 void checkFeet(Entity &/*e*/, SurfaceParams &/*surf_params*/)
 {
-    // TODO: implement geom collision check for feet.
+    // TODO: requires collision
 }
 
 int slideWall(glm::vec3 *bottom, Entity *ent, glm::vec3 *top)

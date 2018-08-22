@@ -167,7 +167,7 @@ public:
         uint32_t            m_assist_target_idx     = 0;
 
         // Animations: Sequencers, NetFx, and TriggeredMoves
-        std::vector<NetFx>  m_fx1;
+        std::vector<NetFx>  m_fx;
         std::array<TriggeredMove, 20> m_triggered_moves;
         SeqBitSet           m_seq_state;                    // Should be part of SeqState
         int                 m_state_mode            = 0;
@@ -197,23 +197,19 @@ public:
         bool                m_has_control_id        = true;  // EntityReponse sendServerPhysicsPositions
         bool                m_has_interp            = true; // EntityUpdateCodec storePosUpdate
 
-        int               u1 = 0; // used for live-debugging
+        int                 u1 = 0; // used for live-debugging
 
         std::array<PosUpdate, 64> m_pos_updates;
         std::array<BinTreeEntry, 7> m_interp_bintree;
         size_t              m_update_idx                = 0;
         glm::vec3           m_velocity;
-        glm::vec3           m_prev_pos;
-        Vector3_FPV         fixedpoint_pos;
         bool                m_pchar_things              = false;
         bool                m_hasname                   = false;
         bool                m_classname_override        = false;
         bool                m_hasRagdoll                = false;
         bool                m_has_owner                 = false;
         bool                m_create_player             = false;
-        int                 current_client_packet_id    = {0};
-        QString             m_override_name;
-        uint32_t            m_input_ack                 = {0};
+        uint32_t            m_input_pkt_id              = {0};
         bool                m_destroyed                 = false;
         uint32_t            ownerEntityId               = 0;
         uint32_t            creatorEntityId             = 0;

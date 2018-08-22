@@ -145,6 +145,7 @@ void entMotion(Entity *ent, InputState *new_state);
 void my_entMoveNoColl(Entity *ent);
 
 // These should eventually be private
+void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::steady_clock::time_point cur_time);
 void setVelocity(Entity &e);
 void entWorldCollide(Entity *ent, SurfaceParams *surface_params);
 bool checkHead(Entity *ent, int val);

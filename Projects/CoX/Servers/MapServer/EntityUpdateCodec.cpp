@@ -227,10 +227,10 @@ void sendNetFx(const Entity &src,BitStream &bs)
     //NetFx.serializeto();
     for(int i=0; i<src.m_num_fx; i++)
     {
-        bs.StoreBits(8,src.m_fx1[i].command); // command
-        bs.StoreBits(32,src.m_fx1[i].net_id); // NetID
-        bs.StoreBits(1,src.m_fx1[i].pitch_to_target);
-        storePackedBitsConditional(bs,10, src.m_fx1[i].handle); // handle
+        bs.StoreBits(8,src.m_fx[i].command); // command
+        bs.StoreBits(32,src.m_fx[i].net_id); // NetID
+        bs.StoreBits(1,src.m_fx[i].pitch_to_target);
+        storePackedBitsConditional(bs,10, src.m_fx[i].handle); // handle
         storeBitsConditional(bs,4,0); // client timer
         storeBitsConditional(bs,32,0); // clientTriggerFx
         storeFloatConditional(bs,0.0); // duration

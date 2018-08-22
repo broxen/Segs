@@ -831,7 +831,7 @@ void MapInstance::on_input_state(InputStateEvent *st)
     ent->m_states.addNewState(st->m_next_state);
 
     if (st->m_next_state.m_has_key_release)
-        ent->m_input_ack = st->m_next_state.m_send_id;
+        ent->m_input_pkt_id = st->m_next_state.m_send_id;
 
     // Set Target
     if(st->m_next_state.m_has_target && (getTargetIdx(*ent) != st->m_next_state.m_target_idx))

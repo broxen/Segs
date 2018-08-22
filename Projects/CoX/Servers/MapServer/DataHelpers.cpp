@@ -297,23 +297,28 @@ void positionTest(Entity *e)
 {
     QString output = "Position Test:\n";
 
+
     output += QString("Prev Pos <%1, %2, %3>\n")
-            .arg(e->m_prev_pos.x)
-            .arg(e->m_prev_pos.y)
-            .arg(e->m_prev_pos.z);
+            .arg(e->m_motion_state.m_last_pos.x, 0, 'f', 1)
+            .arg(e->m_motion_state.m_last_pos.y, 0, 'f', 1)
+            .arg(e->m_motion_state.m_last_pos.z, 0, 'f', 1);
 
     output += QString("Server Pos <%1, %2, %3>\n")
-            .arg(e->m_entity_data.m_pos.x)
-            .arg(e->m_entity_data.m_pos.y)
-            .arg(e->m_entity_data.m_pos.z);
+            .arg(e->m_entity_data.m_pos.x, 0, 'f', 1)
+            .arg(e->m_entity_data.m_pos.y, 0, 'f', 1)
+            .arg(e->m_entity_data.m_pos.z, 0, 'f', 1);
 
+    FixedPointValue fpvx(e->m_entity_data.m_pos.x);
+    FixedPointValue fpvy(e->m_entity_data.m_pos.y);
+    FixedPointValue fpvz(e->m_entity_data.m_pos.z);
     output += QString("Client Pos <%1, %2, %3>\n")
-            .arg((float)e->fixedpoint_pos.x)
-            .arg((float)e->fixedpoint_pos.y)
-            .arg((float)e->fixedpoint_pos.z);
+            .arg(fpvx.store)
+            .arg(fpvy.store)
+            .arg(fpvz.store);
 
-    sendInfoMessage(MessageChannel::DEBUG_INFO, output, e->m_client);
     qCDebug(logPosition) << output;
+    if(e->m_client != nullptr)
+        sendInfoMessage(MessageChannel::DEBUG_INFO, output, e->m_client);
 }
 
 void setInterpolationSettings(Entity *e, const bool active, const uint8_t level, const uint8_t bits)

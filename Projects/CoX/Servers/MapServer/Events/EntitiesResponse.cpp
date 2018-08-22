@@ -510,10 +510,10 @@ void sendServerPhysicsPositions(const EntitiesResponse &src,BitStream &bs)
     if( !target->m_full_update )
         bs.StoreBits(1,target->m_has_control_id);
 
-    qCDebug(logPosition,"Input_Ack: %d",target->m_input_ack);
+    qCDebug(logPosition,"Input_Ack: %d",target->m_input_pkt_id);
 
     if( target->m_full_update || target->m_has_control_id)
-        bs.StoreBits(16,target->m_input_ack);
+        bs.StoreBits(16,target->m_input_pkt_id);
     if(target->m_full_update)
     {
         for(int i=0; i<3; ++i)
