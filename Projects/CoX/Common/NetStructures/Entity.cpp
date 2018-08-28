@@ -160,9 +160,11 @@ void initializeNewPlayerEntity(Entity &e)
     e.m_player.reset(new PlayerData);
     e.m_player->reset();
     e.m_entity.reset(new EntityData);
-    e.m_update_anims = e.m_has_triggered_moves   = true;
+    e.m_update_anims = e.m_entity_full_update   = true;
 
     e.m_states.init(); // Initialize movement input state pointers
+    e.m_states.current()->m_pos_start = e.m_states.current()->m_pos_end = e.m_entity_data.m_pos;
+    e.m_states.previous()->m_pos_start = e.m_states.previous()->m_pos_end = e.m_entity_data.m_pos;
 
     PosUpdate p;
     for(int i = 0; i<64; i++)
@@ -201,9 +203,11 @@ void initializeNewNpcEntity(Entity &e, const Parse_NPC *src, int idx, int varian
     e.m_npc.reset(new NPCData{false,src,idx,variant});
     e.m_player.reset();
     e.m_entity.reset(new EntityData);
-    e.m_update_anims = e.m_has_triggered_moves   = true;
+    e.m_update_anims = e.m_entity_full_update   = true;
 
     e.m_states.init(); // Initialize movement input state pointers
+    e.m_states.current()->m_pos_start = e.m_states.current()->m_pos_end = e.m_entity_data.m_pos;
+    e.m_states.previous()->m_pos_start = e.m_states.previous()->m_pos_end = e.m_entity_data.m_pos;
 
     PosUpdate p;
     for(int i = 0; i<64; i++)

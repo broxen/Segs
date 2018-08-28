@@ -179,7 +179,7 @@ public:
         int                 m_randSeed              = 0;     // Sequencer uses this as a seed for random bone scale
         int                 m_num_fx                = 0;
         bool                m_update_anims          = false;
-        bool                m_has_triggered_moves   = false;
+        bool                m_entity_full_update   = false;
         bool                m_move_instantly        = true; // move instantly or use sequencers?
 
         bool                m_is_logging_out        = false;

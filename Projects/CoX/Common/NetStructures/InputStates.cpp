@@ -61,8 +61,12 @@ void TimeState::dump()
 
 void StateStorage::addNewState(InputState &new_state)
 {
+
     if(m_inp_states.size() < 1)
         m_inp_states.push_back(new_state);
+
+    new_state.m_pos_start = m_inp_states.back().m_pos_end;
+    new_state.m_pos_delta = m_inp_states.back().m_pos_end;
 
     // Only update if we've actually received an update
     for(int i=0; i<3; ++i)
@@ -70,6 +74,7 @@ void StateStorage::addNewState(InputState &new_state)
         if(!new_state.m_pos_delta_valid[i])
             new_state.m_pos_delta[i] = m_inp_states.back().m_pos_delta[i];
     }
+
     bool update_needed=false;
     for(int i=0; i<3; ++i)
     {
@@ -79,8 +84,10 @@ void StateStorage::addNewState(InputState &new_state)
         if(new_state.m_orientation_pyr[i] != m_inp_states.back().m_orientation_pyr[i])
             update_needed = true;
     }
+
     if(update_needed)
         new_state.m_direction = fromCoHYpr(new_state.m_orientation_pyr);
+
 
     m_inp_states.push_back(new_state);
     // m_time_states.push_back(new_time_state);

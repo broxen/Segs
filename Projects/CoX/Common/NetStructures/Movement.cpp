@@ -109,18 +109,52 @@ void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::stead
     }
 }
 
+/*
+void pmotionWithPrediction(Entity *ent, InputState *cs, glm::vec3 *new_vel, StateStorage *state_change)
+{
+    cs->m_start_pos = cs->m_end_pos;
+    ent->mat4.TranslationPart = cs->end_pos;
+    ent->timestep = 1.0f;
+    ent->m_motion_state.m_input_velocity = *new_vel;
+
+    if ( cs->recover_from_landing_timer )
+        --cs->recover_from_landing_timer;
+
+    m_states->m_motion = ent->m_motion_state;
+    //dump_grid_coll_info = cs->controldebug;
+
+    entMotion(ent, cs, &Matrix4x3::ones.ref3x3());
+
+    //dump_grid_coll_info = 0;
+    cs->m_end_pos = ent->mat4.TranslationPart;
+}
+*/
+
+void resetKeypressTime(InputState *controls, std::chrono::steady_clock::time_point curtime)
+{
+    for (int i = 0; i <= BinaryControl::LAST_BINARY_VALUE; ++i )
+    {
+        // reset total time if button is released, or reverse button is pressed
+        if ( !controls->m_control_bits[i] || controls->m_control_bits[reverse_control_direction[i]] )
+            controls->m_keypress_time[i] = 0;
+        controls->m_keypress_start[i] = curtime;
+    }
+}
+
 int checkEntColl(Entity *ent, int bouncing)
 {
     // Do collision checks
 }
 
-void setVelocity(Entity &e)
+
+void setVelocity(Entity &e) // pmotionSetVel
 {
     float       control_vals[6] = {0};
     glm::vec3   horiz_vel       = {0, 0, 0};
     float       max_press_time  = 0.0f;
     float       press_time      = 100.0f;
     glm::vec3   vel             = {0, 0, 0};
+    float       vel_scale_copy = e.m_states.current()->m_velocity_scale;
 
     if (e.m_states.current()->m_no_collision)
         e.m_move_type |= MoveType::MOVETYPE_NOCOLL;
@@ -140,23 +174,28 @@ void setVelocity(Entity &e)
     {
         for (int i = BinaryControl::FORWARD; i < BinaryControl::LAST_BINARY_VALUE; ++i)
         {
-            press_time = e.m_states.current()->m_keypress_time[i]*30;
+            press_time = e.m_states.current()->m_keypress_time[i]; // *30?
             //qCDebug(logMovement) << "keypress_time" << i << e.inp_state.m_keypress_time[i];
-            max_press_time = std::max(press_time, max_press_time);
+            if(press_time > max_press_time)
+                max_press_time = e.m_states.current()->m_keypress_time[i];
+
             if (i >= BinaryControl::UP && !e.m_motion_state.m_is_flying) // UP or Fly
                 control_vals[i] = (float)(press_time != 0);
             else if (!press_time)
                 control_vals[i] = 0.0f;
             else if (press_time >= 1000)
                 control_vals[i] = 1.0f;
-            else if (press_time <= 50 && e.m_states.previous()->m_control_bits[i])
+            else if (press_time <= 50 && e.m_states.current()->m_control_bits[i])
                 control_vals[i] = 0.0f;
-            else if (press_time < 75)
-                control_vals[i] = 0.2f;
-            else if (press_time < 100)
-                control_vals[i] = std::pow(float(press_time - 75) * 0.04f, 2.0f) * 0.4f + 0.2f;
+            else if (press_time >= 75)
+            {
+                if (press_time < 75 || press_time >= 100)
+                    control_vals[i] = (float)(press_time - 100) * 0.004f / 9.0f + 0.6f;
+                else
+                    control_vals[i] = std::pow(float(press_time - 75) * 0.04f, 2.0f) * 0.4f + 0.2f;
+            }
             else
-                control_vals[i] = (float)(press_time - 100) * 0.004f / 9.0f + 0.6f;
+                control_vals[i] = 0.2f;
 
             //qCDebug(logMovement) << "control_vals:" << i << control_vals[i];
         }
@@ -177,17 +216,20 @@ void setVelocity(Entity &e)
             horiz_vel.y = 0.0f;
 
         if (vel.z < 0.0f)
-            e.m_states.current()->m_velocity_scale *= e.m_motion_state.m_backup_spd;
+            vel_scale_copy *= e.m_motion_state.m_backup_spd;
 
         if (e.m_motion_state.m_is_stunned)
-            e.m_states.current()->m_velocity_scale *= 0.1f;
+            vel_scale_copy *= 0.1f;
 
-        if(horiz_vel.length() <= 0.0f)
+        if(glm::length(horiz_vel) <= 0.0f)
+            horiz_vel = glm::vec3(0,0,0);
+        else
             horiz_vel = glm::normalize(horiz_vel);
 
         if (e.m_states.current()->m_speed_scale != 0.0f)
-            e.m_states.current()->m_velocity_scale *= e.m_states.current()->m_speed_scale;
+            vel_scale_copy *= e.m_states.current()->m_speed_scale;
 
+        e.m_motion_state.m_velocity_scale = vel_scale_copy;
         vel.x = horiz_vel.x * std::fabs(control_vals[BinaryControl::RIGHT] - control_vals[BinaryControl::LEFT]);
         vel.z = horiz_vel.z * std::fabs(control_vals[BinaryControl::FORWARD] - control_vals[BinaryControl::BACKWARD]);
 
@@ -226,6 +268,8 @@ void setVelocity(Entity &e)
 
         toggleAFK(*e.m_char);
     }
+
+    // setPlayerVelQuat(&vel, vel_scale_copy); // we don't need this
 }
 
 void my_entMoveNoColl(Entity *ent)
@@ -243,12 +287,12 @@ void my_entMoveNoColl(Entity *ent)
                          << "timestep:" << ent->m_states.current()->m_time_state.m_timestep // use time_rel1C instead
                          << "velocity:" << glm::to_string(ent->m_velocity).c_str();
 
-    ent->m_states.current()->m_pos_delta += time_scale * ent->m_states.current()->m_time_state.m_timestep * ent->m_velocity; // formerly inp_vel
+    ent->m_states.current()->m_pos_delta += time_scale * ent->m_states.current()->m_time_state.m_timestep * ent->m_motion_state.m_input_velocity; // formerly inp_vel
     ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta; // save pos_delta to motion_state instead?
 
     qCDebug(logMovement) << "m_pos no coll" << glm::to_string(ent->m_entity_data.m_pos).c_str();
 
-    if(glm::any(glm::lessThanEqual(ent->m_velocity/255, glm::vec3(0.001f, 0.001f, 0.001f))))
+    if(glm::any(glm::lessThanEqual(ent->m_motion_state.m_input_velocity, glm::vec3(0.001f, 0.001f, 0.001f))))
         ent->m_motion_state.m_move_time = 0;
 }
 
@@ -423,7 +467,7 @@ void doPhysicsOnce(Entity *ent, SurfaceParams *surf_params)
 void doPhysics(Entity *ent, SurfaceParams *surf_mods)
 {
     float timestep = ent->m_states.current()->m_time_state.m_timestep;
-    float mag = ent->m_motion_state.m_velocity.length() * timestep;
+    float mag = glm::length(ent->m_motion_state.m_velocity) * timestep;
 
     if (mag >= 1.0f || timestep >= 5.0f)
     {
@@ -432,12 +476,14 @@ void doPhysics(Entity *ent, SurfaceParams *surf_mods)
         if (numsteps > 5 || timestep >= 5.0f)
             numsteps = 5;
 
-        ent->m_states.current()->m_time_state.m_timestep /= float(numsteps);
+        // probably shouldn't modify this client-provided value
+        //ent->m_states.current()->m_time_state.m_timestep /= float(numsteps);
 
         for(int i=0; i<numsteps; ++i)
             doPhysicsOnce(ent, surf_mods);
 
-        ent->m_states.current()->m_time_state.m_timestep *= numsteps;
+        // probably shouldn't modify this client-provided value
+        //ent->m_states.current()->m_time_state.m_timestep *= numsteps;
     }
     else
         doPhysicsOnce(ent, surf_mods);
@@ -517,32 +563,32 @@ void entWalk(Entity *ent, InputState *new_state)
 
 void entMotion(Entity *ent, InputState *new_state)
 {
-    // Removed additional (ent->m_motion_state.m_inp_vel.length())
+    QString debugmsg = "entMotion failed to perform";
     if(ent->m_motion_state.m_is_falling
-         || (ent->m_velocity.length())
-         || (ent->m_motion_state.m_input_velocity.length())
+         || (glm::length(ent->m_velocity))
+         || (glm::length(ent->m_motion_state.m_input_velocity))
          || !(ent->m_move_type & MoveType::MOVETYPE_WALK)
-         || (ent->m_type == EntType::PLAYER/* && checkEntColl(ent, 0)*/))
+         || (ent->m_type == EntType::PLAYER && checkEntColl(ent, 0)))
     {
         if (ent->m_move_type & MoveType::MOVETYPE_NOCOLL)
         {
-            qCDebug(logMovement)<< "entMotion with no Collision";
+            debugmsg = "entMotion with no Collision";
             my_entMoveNoColl(ent);
         }
         else if(ent->m_move_type & MoveType::MOVETYPE_WALK )
         {
-            qCDebug(logMovement)<< "entMotion normal";
+            debugmsg = "entMotion normal";
             ent->m_motion_state.m_move_time = 0; // move_time
             entWalk(ent, new_state);
             ent->m_motion_state.m_input_velocity = glm::vec3(0,0,0); // formerly inp_vel
         }
         else
         {
-            qCDebug(logMovement)<< "entMotion we're not walking";
+            debugmsg = "entMotion we're not walking";
             ent->m_motion_state.m_is_falling = false;
         }
 
-        qCDebug(logMovement)<< "entMotion failed to perform";
+        qCDebug(logMovement).noquote() << debugmsg;
     }
 }
 
@@ -801,16 +847,16 @@ void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
 
         if (ent->m_motion_state.m_is_flying || p_surf_normal->y <= 0.0f)
         {
-            final_velocity = traction_rel * ent->m_motion_state.m_input_velocity.length() * ent->m_motion_state.m_input_velocity;
+            final_velocity = traction_rel * glm::length(ent->m_motion_state.m_input_velocity) * ent->m_motion_state.m_input_velocity;
         }
         else
         {
             final_velocity = ent->m_motion_state.m_input_velocity;
             final_velocity.y = -((ent->m_motion_state.m_input_velocity.x * p_surf_normal->x + p_surf_normal->z * ent->m_motion_state.m_input_velocity.z) / p_surf_normal->y);
-            float vel_with_traction = ent->m_motion_state.m_input_velocity.length() * traction_rel;
+            float vel_with_traction = glm::length(ent->m_motion_state.m_input_velocity) * traction_rel;
             if (final_velocity.y < 0.0f)
             {
-                float v21 = 1.0f - glm::dot(tvel, final_velocity) / (tvel.length() * final_velocity.length()) * (1.0f - p_surf_normal->y);
+                float v21 = 1.0f - glm::dot(tvel, final_velocity) / (glm::length(tvel) * glm::length(final_velocity)) * (1.0f - p_surf_normal->y);
                 max_speed = max_speed / std::max(0.1f, v21);
             }
             else
@@ -1023,7 +1069,7 @@ void forcePosition(Entity &e, glm::vec3 pos)
 // Move to Sequences or Triggers files later
 void addTriggeredMove(Entity &e, TriggeredMove &trig)
 {
-    e.m_has_triggered_moves = true;
+    e.m_entity_full_update = true;
     e.m_triggered_moves.at(trig.m_move_idx) = trig;
 }
 

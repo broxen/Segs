@@ -24,9 +24,9 @@
 
 void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
 {
-    uint8_t     control_id;
-    uint32_t    ms_since_prev;
-    float       angle;
+    uint8_t     control_id = 0;
+    uint32_t    ms_since_prev = 0;
+    float       angle = 0.0f;
 
     do
     {   
@@ -136,6 +136,7 @@ void InputStateEvent::extended_input(BitStream &bs)
         m_next_state.m_control_bits[idx] = keypress_state;
         if(keypress_state==true)
         {
+            m_next_state.m_keypress_start[idx] = std::chrono::steady_clock::now();
             processDirectionControl(&m_next_state, idx, 0, keypress_state);
             qCDebug(logInput, "key pressed down %f", idx);
         }

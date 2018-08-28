@@ -49,12 +49,11 @@ void World::physicsStep(Entity *e,uint32_t msec)
     if(e->m_states.current() == nullptr)
         return;
 
-    if(glm::length2(e->m_states.current()->m_pos_delta)
-            || glm::length2(e->m_states.previous()->m_pos_delta) != glm::length2(e->m_states.current()->m_pos_delta))
+    if(glm::length2(e->m_states.current()->m_pos_delta))
     {
         // Get timestamp in ms
-        std::chrono::steady_clock::time_point tp = std::chrono::steady_clock::now();
-        auto now_ms = std::chrono::steady_clock::now().time_since_epoch().count();
+        auto tp = std::chrono::steady_clock::now();
+        auto now_ms = tp.time_since_epoch().count();
 
         // add PosUpdate
         PosUpdate prev      = e->m_pos_updates[(e->m_update_idx + -1 + 64) % 64];
@@ -65,7 +64,6 @@ void World::physicsStep(Entity *e,uint32_t msec)
         addPosUpdate(*e, pud);
 
         int dt = pud.m_timestamp - prev.m_timestamp;
-        e->m_motion_state.m_last_pos = e->m_entity_data.m_pos;
         float vel_scale = e->m_states.current()->m_velocity_scale/255.0f;
 
         glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
@@ -79,22 +77,28 @@ void World::physicsStep(Entity *e,uint32_t msec)
             setVelocity(*e);
             entMotion(e, e->m_states.current());
             e->m_states.current()->m_pos_delta = e->m_states.current()->m_time_state.m_timestep * (e->m_motion_state.m_last_pos - pud.m_position) + pud.m_position.x;
-            e->m_entity_data.m_pos += e->m_states.current()->m_pos_delta;
+            //e->m_entity_data.m_pos += e->m_states.current()->m_pos_delta;
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
             positionTest(e);
-            //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
+            resetKeypressTime(e->m_states.current(), tp);
+            e->m_states.current()->m_pos_delta = {0,0,0};
+            e->m_velocity = {0,0,0};
             break;
         }
         case 2:
             my_entMoveNoColl(e);
-            e->m_entity_data.m_pos += e->m_motion_state.m_last_pos;
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
             positionTest(e);
             //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
             break;
         default:
             calculateKeypressTime(e, e->m_states.current(), tp);
             setVelocity(*e);
-            e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/50; // formerly divide by 50
+            e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
             positionTest(e);
+            resetKeypressTime(e->m_states.current(), tp);
+            e->m_states.current()->m_pos_delta = {0,0,0};
+            e->m_velocity = {0,0,0};
             break;
         }
 

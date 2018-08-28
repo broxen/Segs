@@ -499,6 +499,8 @@ void sendServerControlState(const EntitiesResponse &src,BitStream &bs)
         storeFloatConditional(bs, ent->m_states.current()->m_camera_pyr.z); // Roll
 
         bs.StorePackedBits(1, ent->m_motion_state.m_is_falling); // server side forced falling bit
+
+        ent->m_update_pos_and_cam = false; // run once
     }
 }
 

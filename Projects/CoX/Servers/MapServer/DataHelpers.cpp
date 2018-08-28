@@ -295,6 +295,9 @@ void sendServerMOTD(MapClientSession *tgt)
 
 void positionTest(Entity *e)
 {
+    if(e->m_type != EntType::PLAYER)
+        return;
+
     QString output = "Position Test:\n";
 
 
@@ -316,7 +319,12 @@ void positionTest(Entity *e)
             .arg(fpvy.store)
             .arg(fpvz.store);
 
-    qCDebug(logPosition) << output;
+    output += QString("Velocity <%1, %2, %3>\n")
+            .arg(e->m_velocity.x, 0, 'f', 1)
+            .arg(e->m_velocity.y, 0, 'f', 1)
+            .arg(e->m_velocity.z, 0, 'f', 1);
+
+    qDebug().noquote() << output;
     if(e->m_client != nullptr)
         sendInfoMessage(MessageChannel::DEBUG_INFO, output, e->m_client);
 }
