@@ -175,7 +175,6 @@ void initializeNewPlayerEntity(Entity &e)
         p.m_position = e.m_entity_data.m_pos;
         p.m_pyr_angles = e.m_entity_data.m_orientation_pyr;
         p.m_timestamp = now_ms;
-        //addInterp(e, p);
         addPosUpdate(e, p);
     }
 }
@@ -218,7 +217,6 @@ void initializeNewNpcEntity(Entity &e, const Parse_NPC *src, int idx, int varian
         p.m_position = e.m_entity_data.m_pos;
         p.m_pyr_angles = e.m_entity_data.m_orientation_pyr;
         p.m_timestamp = now_ms;
-        //addInterp(e, p);
         addPosUpdate(e, p);
     }
 }

@@ -77,7 +77,6 @@ public:
     EVENT_DECL(evAddTimeStateLog            ,160)
     EVENT_DECL(evLevelUp                    ,161)
     EVENT_DECL(evChangeTitle                ,162)
->>>>>>> upstream/develop
 //    EVENT_DECL(evCSRBugReport             ,164)
     EVENT_DECL(evEmailHeadersCmd            ,165)
     EVENT_DECL(evEmailReadCmd               ,166)
