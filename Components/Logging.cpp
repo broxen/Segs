@@ -43,6 +43,7 @@ SEGS_LOGGING_CATEGORY(logMiniMap,      "log.minimap")
 SEGS_LOGGING_CATEGORY(logLFG,          "log.lfg")
 SEGS_LOGGING_CATEGORY(logNPCs,         "log.npcs")
 SEGS_LOGGING_CATEGORY(logAnimations,   "log.animations")
+SEGS_LOGGING_CATEGORY(logPowers,       "log.powers")
 
 void setLoggingFilter()
 {
@@ -73,6 +74,7 @@ void setLoggingFilter()
     filter_rules += "\nlog.lfg="            + config.value("log_lfg","false").toString();
     filter_rules += "\nlog.npcs="           + config.value("log_npcs","false").toString();
     filter_rules += "\nlog.animations="     + config.value("log_animations","false").toString();
+    filter_rules += "\nlog.powers="         + config.value("log_powers","false").toString();
     config.endGroup(); // Logging
 
     QLoggingCategory::setFilterRules(filter_rules);
@@ -133,6 +135,8 @@ void toggleLogging(QString &category)
         cat = &logNPCs();
     else if(category.contains("animations",Qt::CaseInsensitive))
         cat = &logAnimations();
+    else if(category.contains("powers",Qt::CaseInsensitive))
+        cat = &logPowers();
     else
         return;
 
@@ -170,6 +174,7 @@ void dumpLogging()
     output += "\n\t lfg: "          + QString::number(logLFG().isDebugEnabled());
     output += "\n\t npcs: "         + QString::number(logNPCs().isDebugEnabled());
     output += "\n\t animations: "   + QString::number(logAnimations().isDebugEnabled());
+    output += "\n\t powers: "       + QString::number(logPowers().isDebugEnabled());
 
     qDebug().noquote() << output;
 }

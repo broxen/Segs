@@ -177,6 +177,11 @@ public:
         uint8_t             m_seq_move_change_time  = 0;
         uint8_t             m_move_type             = 0;
         int                 m_randSeed              = 0;     // Sequencer uses this as a seed for random bone scale
+
+        std::vector<CharacterPower *> m_queued_powers;
+        std::vector<CharacterPower *> m_recharging_powers;
+        CharacterPower    * m_stance                = nullptr;
+
         int                 m_num_fx                = 0;
         bool                m_update_anims          = false;
         bool                m_entity_full_update   = false;
