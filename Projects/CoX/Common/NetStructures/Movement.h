@@ -114,6 +114,7 @@ struct MotionState // current derived state of motion
     bool            m_flag_15               = false; // 15 no idea
 
     glm::vec3       m_velocity;
+    glm::vec3       m_speed                 = {1,1,1};
     glm::vec3       m_input_velocity;
     glm::vec3       m_last_pos;
 
@@ -143,16 +144,9 @@ struct MotionState // current derived state of motion
 void processDirectionControl(InputState *next_state, uint8_t dir, int prev_time, int press_release);
 void entMotion(Entity *ent, InputState *new_state);
 void my_entMoveNoColl(Entity *ent);
-
-// These should eventually be private
+void setVelocity(Entity &e);
 void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::steady_clock::time_point cur_time);
 void resetKeypressTime(InputState *controls, std::chrono::steady_clock::time_point curtime);
-void setVelocity(Entity &e);
-void entWorldCollide(Entity *ent, SurfaceParams *surface_params);
-bool checkHead(Entity *ent, int val);
-void checkFeet(Entity &e, SurfaceParams &surf_params);
-int slideWall(glm::vec3 *bottom, Entity *ent, glm::vec3 *top);
-void entWorldGetSurface(Entity *ent, SurfaceParams *surf_params);
 
 void addPosUpdate(Entity &e, const PosUpdate &p);
 bool updateRotation(const Entity &e, int axis); // returns true if given axis needs updating;

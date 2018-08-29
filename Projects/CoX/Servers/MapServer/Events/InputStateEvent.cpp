@@ -50,7 +50,7 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
             {
                 bool keypress_state = bs.GetBits(1); // get keypress state
                 m_next_state.m_control_bits[control_id] = keypress_state; // save control_bits
-                processDirectionControl(&m_next_state, control_id, ms_since_prev, keypress_state);
+                //processDirectionControl(&m_next_state, control_id, ms_since_prev, keypress_state);
                 qCDebug(logInput, "key released %f", control_id);
                 break;
             }

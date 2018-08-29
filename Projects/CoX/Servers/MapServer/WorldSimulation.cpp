@@ -68,39 +68,32 @@ void World::physicsStep(Entity *e,uint32_t msec)
 
         glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
 
+        calculateKeypressTime(e, e->m_states.current(), tp);
+        setVelocity(*e);
+
         // TODO: REMOVE: FOR TESTING ONLY
         switch(e->u1)
         {
         case 1:
         {
-            calculateKeypressTime(e, e->m_states.current(), tp);
-            setVelocity(*e);
             entMotion(e, e->m_states.current());
             e->m_states.current()->m_pos_delta = e->m_states.current()->m_time_state.m_timestep * (e->m_motion_state.m_last_pos - pud.m_position) + pud.m_position.x;
-            //e->m_entity_data.m_pos += e->m_states.current()->m_pos_delta;
-            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
-            positionTest(e);
-            resetKeypressTime(e->m_states.current(), tp);
-            e->m_states.current()->m_pos_delta = {0,0,0};
-            e->m_velocity = {0,0,0};
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
             break;
         }
         case 2:
             my_entMoveNoColl(e);
-            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
-            positionTest(e);
-            //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_velocity * float(msec); //e->m_states.current()->m_time_state.m_time_rel1C;
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos;
+            //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * float(msec);
             break;
         default:
-            calculateKeypressTime(e, e->m_states.current(), tp);
-            setVelocity(*e);
-            e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
-            positionTest(e);
-            resetKeypressTime(e->m_states.current(), tp);
-            e->m_states.current()->m_pos_delta = {0,0,0};
-            e->m_velocity = {0,0,0};
+            e->m_entity_data.m_pos += ((za*e->m_motion_state.m_velocity)*float(msec))/24; // formerly divide by 50
+            //e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
             break;
         }
+
+        positionTest(e);
+        resetKeypressTime(e->m_states.current(), tp);
 
         e->m_interp_bintree = interpolateBinTree(e->m_pos_updates, 0.02f);
 
@@ -112,7 +105,7 @@ void World::physicsStep(Entity *e,uint32_t msec)
                                        << "\n    cur_pos:\t"    << glm::to_string(e->m_entity_data.m_pos).c_str()
                                        << "\n    distance:\t"   << distance
                                        << "\n    vel_scale:\t"  << vel_scale << e->m_states.current()->m_velocity_scale
-                                       << "\n    velocity:\t"   << glm::to_string(e->m_velocity).c_str();
+                                       << "\n    velocity:\t"   << glm::to_string(e->m_motion_state.m_velocity).c_str();
         }
     }
 }

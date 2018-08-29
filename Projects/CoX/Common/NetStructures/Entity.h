@@ -162,7 +162,6 @@ public:
         uint32_t            m_db_id                 = {0};
         EntType             m_type                  = {EntType::Invalid};
         glm::quat           m_direction;
-        glm::vec3           m_speed                 = {1,1,1};
         uint32_t            m_target_idx            = 0;
         uint32_t            m_assist_target_idx     = 0;
 
@@ -207,7 +206,6 @@ public:
         std::array<PosUpdate, 64> m_pos_updates;
         std::array<BinTreeEntry, 7> m_interp_bintree;
         size_t              m_update_idx                = 0;
-        glm::vec3           m_velocity;
         bool                m_pchar_things              = false;
         bool                m_hasname                   = false;
         bool                m_classname_override        = false;

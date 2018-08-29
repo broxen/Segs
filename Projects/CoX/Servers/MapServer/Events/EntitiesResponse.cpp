@@ -552,7 +552,7 @@ void sendServerControlState(const EntitiesResponse &src,BitStream &bs)
         bs.StoreBits(8, ent->m_motion_state.m_motion_state_id);
         // after input_send_time_initialized, this value is enqueued as CSC_9's control_flags
 
-        storeVector(bs, ent->m_speed); // This is entity speed vector !!
+        storeVector(bs, ent->m_motion_state.m_speed); // This is entity speed vector !!
 
         bs.StoreFloat(ent->m_motion_state.m_backup_spd);         // Backup Speed default = 1.0f
         bs.StoreBitArray((uint8_t *)&surface_params,2*sizeof(SurfaceParams)*8);
@@ -573,7 +573,7 @@ void sendServerControlState(const EntitiesResponse &src,BitStream &bs)
     {
         bs.StorePackedBits(1, ent->m_states.current()->m_received_id); // sets g_client_pos_id_rel default = 0
         storeVector(bs, ent->m_entity_data.m_pos);   // server-side pos
-        storeVectorConditional(bs, ent->m_speed); // server-side spd
+        storeVectorConditional(bs, ent->m_motion_state.m_speed); // server-side spd
 
         storeFloatConditional(bs, ent->m_states.current()->m_camera_pyr.x); // Pitch
         storeFloatConditional(bs, ent->m_states.current()->m_camera_pyr.y); // Yaw
@@ -597,15 +597,17 @@ void sendServerPhysicsPositions(const EntitiesResponse &src,BitStream &bs)
 
     if( target->m_full_update || target->m_has_control_id)
         bs.StoreBits(16,target->m_input_pkt_id);
+
     if(target->m_full_update)
     {
         for(int i=0; i<3; ++i)
             bs.StoreFloat(target->m_entity_data.m_pos[i]); // server position
+
         for(int i=0; i<3; ++i)
-            storeFloatConditional(bs,target->m_velocity[i]);
+            storeFloatConditional(bs, target->m_motion_state.m_velocity[i]);
 
         qCDebug(logPosition) << "position" << glm::to_string(target->m_entity_data.m_pos).c_str();
-        qCDebug(logPosition) << "velocity" << glm::to_string(target->m_velocity).c_str();
+        qCDebug(logPosition) << "velocity" << glm::to_string(target->m_motion_state.m_velocity).c_str();
     }
 }
 

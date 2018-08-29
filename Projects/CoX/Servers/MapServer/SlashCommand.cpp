@@ -960,7 +960,7 @@ void cmdHandler_AddNPC(const QString &cmd, MapClientSession &sess)
     int idx = npc_store.npc_idx(npc_def);
     Entity *e = sess.m_current_map->m_entities.CreateNpc(*npc_def,idx,variation);
     forcePosition(*e, gm_loc + offset);
-    e->m_velocity = {0,0,0};
+    e->m_motion_state.m_velocity = {0,0,0};
     sendInfoMessage(MessageChannel::DEBUG_INFO, QString("Created npc with ent idx:%1").arg(e->m_idx), &sess);
 }
 

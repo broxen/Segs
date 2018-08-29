@@ -34,6 +34,13 @@ static SurfaceParams s_world_surf_params[2] = {
     { 0.02f, 0.01f, 0.00f, 0.065f, 1.00f }  // air; from client
 };
 
+// Private Methods
+void entWorldCollide(Entity *ent, SurfaceParams *surface_params);
+bool checkHead(Entity *ent, int val);
+void checkFeet(Entity &ent, SurfaceParams &surf_params);
+int slideWall(Entity *ent, glm::vec3 *bottom, glm::vec3 *top);
+void entWorldGetSurface(Entity *ent, SurfaceParams *surf_params);
+
 void roundVelocityToZero(glm::vec3 *vel)
 {
     if (std::abs(vel->x) < 0.00001f)
@@ -44,6 +51,7 @@ void roundVelocityToZero(glm::vec3 *vel)
         vel->z = 0;
 }
 
+// This will be deprecated in favor of setVelocity()
 void processDirectionControl(InputState *next_state, uint8_t dir, int prev_time, int press_release)
 {
     float delta = 0.0f;
@@ -123,7 +131,7 @@ void pmotionWithPrediction(Entity *ent, InputState *cs, glm::vec3 *new_vel, Stat
     m_states->m_motion = ent->m_motion_state;
     //dump_grid_coll_info = cs->controldebug;
 
-    entMotion(ent, cs, &Matrix4x3::ones.ref3x3());
+    entMotion(ent, cs);
 
     //dump_grid_coll_info = 0;
     cs->m_end_pos = ent->mat4.TranslationPart;
@@ -144,81 +152,84 @@ void resetKeypressTime(InputState *controls, std::chrono::steady_clock::time_poi
 int checkEntColl(Entity *ent, int bouncing)
 {
     // Do collision checks
+    return 1;
 }
-
 
 void setVelocity(Entity &e) // pmotionSetVel
 {
-    float       control_vals[6] = {0};
+    InputState *state   = e.m_states.current();
+    MotionState *motion = &e.m_motion_state;
     glm::vec3   horiz_vel       = {0, 0, 0};
-    float       max_press_time  = 0.0f;
-    float       press_time      = 100.0f;
     glm::vec3   vel             = {0, 0, 0};
-    float       vel_scale_copy = e.m_states.current()->m_velocity_scale;
 
-    if (e.m_states.current()->m_no_collision)
+    float       control_amounts[6] = {0};
+    int         max_press_time  = 0;
+    int         press_time      = 0;
+    float       vel_scale_copy  = state->m_velocity_scale;
+
+    if (state->m_no_collision)
         e.m_move_type |= MoveType::MOVETYPE_NOCOLL;
     else
         e.m_move_type &= ~MoveType::MOVETYPE_NOCOLL;
 
-    if(e.m_states.current()->m_no_collision
-            && e.m_states.current()->m_autorun
-            && (e.m_motion_state.m_controls_disabled || e.m_motion_state.m_has_headpain))
+    if(state->m_no_collision
+            && state->m_autorun
+            && (motion->m_controls_disabled || state->m_landing_recovery_time || motion->m_has_headpain))
     {
         if(e.m_type == EntType::PLAYER)
-            qCDebug(logMovement) << "Input Vel is <0, 0, 0>. No coll?" << e.m_states.current()->m_no_collision;
+            qCDebug(logMovement) << "Input Vel is <0, 0, 0>. No coll?" << state->m_no_collision;
 
-        e.m_velocity = vel;
+        motion->m_input_velocity = vel;
     }
     else
     {
         for (int i = BinaryControl::FORWARD; i < BinaryControl::LAST_BINARY_VALUE; ++i)
         {
-            press_time = e.m_states.current()->m_keypress_time[i]; // *30?
-            //qCDebug(logMovement) << "keypress_time" << i << e.inp_state.m_keypress_time[i];
-            if(press_time > max_press_time)
-                max_press_time = e.m_states.current()->m_keypress_time[i];
+            press_time = state->m_keypress_time[i];
+            //qCDebug(logMovement) << "keypress_time" << i << press_time;
 
-            if (i >= BinaryControl::UP && !e.m_motion_state.m_is_flying) // UP or Fly
-                control_vals[i] = (float)(press_time != 0);
+            if(press_time > max_press_time)
+                max_press_time = state->m_keypress_time[i];
+
+            if (i >= BinaryControl::UP && !motion->m_is_flying) // UP or Fly
+                control_amounts[i] = (float)(press_time != 0);
             else if (!press_time)
-                control_vals[i] = 0.0f;
+                control_amounts[i] = 0.0f;
             else if (press_time >= 1000)
-                control_vals[i] = 1.0f;
-            else if (press_time <= 50 && e.m_states.current()->m_control_bits[i])
-                control_vals[i] = 0.0f;
+                control_amounts[i] = 1.0f;
+            else if (press_time <= 50 && state->m_control_bits[i])
+                control_amounts[i] = 0.0f;
             else if (press_time >= 75)
             {
                 if (press_time < 75 || press_time >= 100)
-                    control_vals[i] = (float)(press_time - 100) * 0.004f / 9.0f + 0.6f;
+                    control_amounts[i] = (float)(press_time - 100) * 0.004f / 9.0f + 0.6f;
                 else
-                    control_vals[i] = std::pow(float(press_time - 75) * 0.04f, 2.0f) * 0.4f + 0.2f;
+                    control_amounts[i] = std::pow(float(press_time - 75) * 0.04f, 2.0f) * 0.4f + 0.2f;
             }
             else
-                control_vals[i] = 0.2f;
+                control_amounts[i] = 0.2f;
 
-            //qCDebug(logMovement) << "control_vals:" << i << control_vals[i];
+            //qCDebug(logMovement) << "control_amounts:" << i << control_amounts[i];
         }
 
-        e.m_states.current()->m_move_time = max_press_time;
-        vel.x = control_vals[BinaryControl::RIGHT] - control_vals[BinaryControl::LEFT];
-        vel.y = control_vals[BinaryControl::UP] - control_vals[BinaryControl::DOWN];
-        vel.z = control_vals[BinaryControl::FORWARD] - control_vals[BinaryControl::BACKWARD];
-        vel.x = vel.x * e.m_speed.x;
-        vel.y = vel.y * e.m_speed.y;
+        state->m_move_time = max_press_time;
+        vel.x = control_amounts[BinaryControl::RIGHT] - control_amounts[BinaryControl::LEFT];
+        vel.y = control_amounts[BinaryControl::UP] - control_amounts[BinaryControl::DOWN];
+        vel.z = control_amounts[BinaryControl::FORWARD] - control_amounts[BinaryControl::BACKWARD];
+        vel.x = vel.x * motion->m_speed.x;
+        vel.y = vel.y * motion->m_speed.y;
+        horiz_vel = vel;
 
         if(e.m_type == EntType::PLAYER)
             qCDebug(logMovement) << "vel:" << glm::to_string(vel).c_str();
 
-        horiz_vel = vel;
-
-        if (!e.m_motion_state.m_is_flying)
+        if (!motion->m_is_flying)
             horiz_vel.y = 0.0f;
 
         if (vel.z < 0.0f)
-            vel_scale_copy *= e.m_motion_state.m_backup_spd;
+            vel_scale_copy *= motion->m_backup_spd;
 
-        if (e.m_motion_state.m_is_stunned)
+        if (motion->m_is_stunned)
             vel_scale_copy *= 0.1f;
 
         if(glm::length(horiz_vel) <= 0.0f)
@@ -226,42 +237,43 @@ void setVelocity(Entity &e) // pmotionSetVel
         else
             horiz_vel = glm::normalize(horiz_vel);
 
-        if (e.m_states.current()->m_speed_scale != 0.0f)
-            vel_scale_copy *= e.m_states.current()->m_speed_scale;
+        if(e.m_type == EntType::PLAYER)
+            qCDebug(logMovement) << "horizVel:" << glm::to_string(horiz_vel).c_str();
 
-        e.m_motion_state.m_velocity_scale = vel_scale_copy;
-        vel.x = horiz_vel.x * std::fabs(control_vals[BinaryControl::RIGHT] - control_vals[BinaryControl::LEFT]);
-        vel.z = horiz_vel.z * std::fabs(control_vals[BinaryControl::FORWARD] - control_vals[BinaryControl::BACKWARD]);
+        if (state->m_speed_scale != 0.0f)
+            vel_scale_copy *= state->m_speed_scale;
 
-        if (e.m_motion_state.m_is_flying)
-            vel.y = horiz_vel.y * std::fabs(control_vals[BinaryControl::UP] - control_vals[BinaryControl::DOWN]);
-        else if (e.m_states.previous()->m_control_bits[BinaryControl::UP])
+        motion->m_velocity_scale = vel_scale_copy;
+        vel.x = horiz_vel.x * std::fabs(control_amounts[BinaryControl::RIGHT] - control_amounts[BinaryControl::LEFT]);
+        vel.z = horiz_vel.z * std::fabs(control_amounts[BinaryControl::FORWARD] - control_amounts[BinaryControl::BACKWARD]);
+
+        if (motion->m_is_flying)
+            vel.y = horiz_vel.y * std::fabs(control_amounts[BinaryControl::UP] - control_amounts[BinaryControl::DOWN]);
+        else if (e.m_states.previous()->m_control_bits[BinaryControl::UP] && !state->m_control_bits[BinaryControl::UP])
             vel.y = 0.0f;
         else
         {
-            vel.y *= glm::clamp(e.m_motion_state.m_jump_height, 0.0f, 1.0f);
+            vel.y *= glm::clamp(motion->m_jump_height, 0.0f, 1.0f);
             //if (!e.m_is_sliding)
                 //ent->motion.flag_5 = false; // flag_5 moving on y-axis?
         }
 
-        if(e.m_type == EntType::PLAYER)
-            qCDebug(logMovement) << "horizVel:" << glm::to_string(horiz_vel).c_str();
     }
 
     // Movement Flags
-    if (e.m_motion_state.m_is_flying)
+    if (motion->m_is_flying)
         e.m_move_type |= MoveType::MOVETYPE_FLY;
     else
         e.m_move_type &= ~MoveType::MOVETYPE_FLY;
 
-    if (e.m_motion_state.m_has_jumppack)
+    if (motion->m_has_jumppack)
         e.m_move_type |= MoveType::MOVETYPE_JETPACK;
     else
         e.m_move_type &= ~MoveType::MOVETYPE_JETPACK;
 
-    e.m_velocity = vel; // motion->inp_vel = vel;
+    motion->m_input_velocity = vel;
 
-    if (e.m_char->m_char_data.m_afk && e.m_velocity != glm::vec3(0,0,0))
+    if (e.m_char->m_char_data.m_afk && motion->m_input_velocity != glm::vec3(0,0,0))
     {
         if(e.m_type == EntType::PLAYER)
             qCDebug(logMovement) << "Moving so turning off AFK";
@@ -284,13 +296,13 @@ void my_entMoveNoColl(Entity *ent)
 
     qCDebug(logMovement) << "BEFORE: m_pos_delta:" << glm::to_string(ent->m_states.current()->m_pos_delta).c_str()
                          << "time_scale:" << time_scale
-                         << "timestep:" << ent->m_states.current()->m_time_state.m_timestep // use time_rel1C instead
-                         << "velocity:" << glm::to_string(ent->m_velocity).c_str();
+                         << "timestep_rel:" << ent->m_states.current()->m_time_state.m_timestep // formerly timestep
+                         << "velocity:" << glm::to_string(ent->m_motion_state.m_velocity).c_str();
 
-    ent->m_states.current()->m_pos_delta += time_scale * ent->m_states.current()->m_time_state.m_timestep * ent->m_motion_state.m_input_velocity; // formerly inp_vel
-    ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta; // save pos_delta to motion_state instead?
+    ent->m_states.current()->m_pos_delta += time_scale * ent->m_states.current()->m_time_state.m_timestep * ent->m_motion_state.m_input_velocity;
+    ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta;
 
-    qCDebug(logMovement) << "m_pos no coll" << glm::to_string(ent->m_entity_data.m_pos).c_str();
+    qCDebug(logMovement) << "m_pos no coll" << glm::to_string(ent->m_motion_state.m_last_pos).c_str();
 
     if(glm::any(glm::lessThanEqual(ent->m_motion_state.m_input_velocity, glm::vec3(0.001f, 0.001f, 0.001f))))
         ent->m_motion_state.m_move_time = 0;
@@ -397,7 +409,7 @@ void checkJump(Entity *ent, InputState *new_state, SurfaceParams *surf_params)
          && (!want_jump && !(ent->m_move_type & MoveType::MOVETYPE_JETPACK)))
     {
         ent->m_motion_state.m_has_jumppack = false;
-        ent->m_motion_state.m_velocity.y -= std::min(1.5f, ent->m_velocity.y) * 0.5f;
+        ent->m_motion_state.m_velocity.y -= std::min(1.5f, ent->m_motion_state.m_velocity.y) * 0.5f;
     }
 
     bool not_moving_on_yaxis = !(ent->m_motion_state.m_is_falling
@@ -541,7 +553,7 @@ void entWalk(Entity *ent, InputState *new_state)
         ent->m_motion_state.m_is_sliding++;
     */
 
-    if(is_sliding && ent->m_velocity.y <= 0.0f)
+    if(is_sliding && ent->m_motion_state.m_velocity.y <= 0.0f)
     {
         ent->m_motion_state.m_is_sliding = true;
         ent->m_seq_state.set(SeqBitNames::SB_SLIDING);
@@ -557,7 +569,7 @@ void entWalk(Entity *ent, InputState *new_state)
         ent->m_motion_state.m_jump_apex = ent->m_states.current()->m_pos_delta.y;
     }
 
-    roundVelocityToZero(&ent->m_velocity);
+    roundVelocityToZero(&ent->m_motion_state.m_velocity);
     ent->m_motion_state.m_last_pos = ent->m_states.current()->m_pos_delta;
 }
 
@@ -565,7 +577,7 @@ void entMotion(Entity *ent, InputState *new_state)
 {
     QString debugmsg = "entMotion failed to perform";
     if(ent->m_motion_state.m_is_falling
-         || (glm::length(ent->m_velocity))
+         || (glm::length(ent->m_motion_state.m_velocity))
          || (glm::length(ent->m_motion_state.m_input_velocity))
          || !(ent->m_move_type & MoveType::MOVETYPE_WALK)
          || (ent->m_type == EntType::PLAYER && checkEntColl(ent, 0)))
@@ -620,7 +632,7 @@ void old_entWorldCollide(Entity *ent, SurfaceParams *surface)
         top = ent->m_motion_state.m_last_pos;
         bottom = ent->m_states.current()->m_pos_delta;
 
-        if(slideWall(&bottom, ent, &top))
+        if(slideWall(ent, &bottom, &top))
         {
             ent->m_motion_state.m_stuck_head = StuckType::STUCK_COMPLETELY;
             ent->m_states.current()->m_pos_delta = ent->m_motion_state.m_last_pos;
@@ -691,7 +703,7 @@ void motionSetSequence(Entity *ent, InputState *new_state)
         ent->m_seq_state.set(SeqBitNames::SB_AIR);
         bool sliding = ent->m_motion_state.m_is_sliding;
 
-        if ( !sliding && ent->m_velocity.y < -0.6f && ent->m_motion_state.m_jump_apex - ent->m_states.current()->m_pos_delta.y > 3.5f )
+        if ( !sliding && ent->m_motion_state.m_velocity.y < -0.6f && ent->m_motion_state.m_jump_apex - ent->m_states.current()->m_pos_delta.y > 3.5f )
             ent->m_seq_state.set(SeqBitNames::SB_BIGFALL);
     }
     else if (ent->m_motion_state.m_has_headpain)
@@ -707,7 +719,7 @@ void motionSetSequence(Entity *ent, InputState *new_state)
 
         if(ent->m_player->m_options.no_strafe)
         {
-            if(ent->m_velocity.x != 0.0f && ent->m_velocity.z >= 0.0f) // formerly: inp_vel
+            if(ent->m_motion_state.m_velocity.x != 0.0f && ent->m_motion_state.m_input_velocity.z >= 0.0f)
             {
                 negative_control_delta = 1;
                 if ( is_moving_backwards )
@@ -716,10 +728,10 @@ void motionSetSequence(Entity *ent, InputState *new_state)
                     ent->m_seq_state.set(SeqBitNames::SB_FORWARD);
             }
         }
-        else if(ent->m_velocity.x != 0.0f) // formerly: inp_vel
+        else if(ent->m_motion_state.m_input_velocity.x != 0.0f)
         {
             negative_control_delta = 1;
-            if(ent->m_velocity.x <= 0.0f) // formerly: inp_vel
+            if(ent->m_motion_state.m_input_velocity.x <= 0.0f)
                 ent->m_seq_state.set(SeqBitNames::SB_STEPLEFT);
             else
                 ent->m_seq_state.set(SeqBitNames::SB_STEPRIGHT);
@@ -731,12 +743,12 @@ void motionSetSequence(Entity *ent, InputState *new_state)
                 ent->m_seq_state.set(SeqBitNames::SB_JUMP);
         }
 
-        if (ent->m_velocity.z != 0.0f ) // formerly: inp_vel
+        if (ent->m_motion_state.m_input_velocity.z != 0.0f )
         {
             if(is_moving_backwards)
-                z_axis = -ent->m_velocity.z; // formerly: inp_vel
+                z_axis = -ent->m_motion_state.m_input_velocity.z;
             else
-                z_axis = ent->m_velocity.z; // formerly: inp_vel
+                z_axis = ent->m_motion_state.m_input_velocity.z;
 
             negative_control_delta = 1;
             if ( z_axis <= 0.0f )
@@ -1029,17 +1041,17 @@ void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
     //ent->m_motion_state.m_walk_flags = s_last_surf.ctri ? s_last_surf.ctri->flags : 0;
 }
 
-bool checkHead(Entity *ent, int val)
+bool checkHead(Entity */*ent*/, int /*val*/)
 {
     // TODO: requires collision
 }
 
-void checkFeet(Entity &/*e*/, SurfaceParams &/*surf_params*/)
+void checkFeet(Entity &/*ent*/, SurfaceParams &/*surf_params*/)
 {
     // TODO: requires collision
 }
 
-int slideWall(glm::vec3 *bottom, Entity *ent, glm::vec3 *top)
+int slideWall(Entity */*ent*/, glm::vec3 */*bottom*/, glm::vec3 */*top*/)
 {
     // TODO: requires collision
 }

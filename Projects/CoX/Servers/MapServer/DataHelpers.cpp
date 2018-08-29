@@ -38,7 +38,7 @@ uint32_t    getDbId(const Entity &e) { return e.m_db_id; }
 uint32_t    getAccessLevel(const Entity &e) { return e.m_entity_data.m_access_level; }
 uint32_t    getTargetIdx(const Entity &e) { return e.m_target_idx; }
 uint32_t    getAssistTargetIdx(const Entity &e) { return e.m_assist_target_idx; }
-glm::vec3   getSpeed(const Entity &e) { return e.m_speed; }
+glm::vec3   getSpeed(const Entity &e) { return e.m_motion_state.m_speed; }
 float       getBackupSpd(const Entity &e) { return e.m_motion_state.m_backup_spd; }
 float       getJumpHeight(const Entity &e) { return e.m_motion_state.m_jump_height; }
 uint8_t     getUpdateId(const Entity &e) { return e.m_motion_state.m_motion_state_id; }
@@ -46,7 +46,7 @@ uint8_t     getUpdateId(const Entity &e) { return e.m_motion_state.m_motion_stat
 // Setters
 void    setDbId(Entity &e, uint8_t val) { e.m_char->m_db_id = val; e.m_db_id = val; }
 void    setMapIdx(Entity &e, uint32_t val) { e.m_entity_data.m_map_idx = val; }
-void    setSpeed(Entity &e, float v1, float v2, float v3) { e.m_speed = {v1,v2,v3}; }
+void    setSpeed(Entity &e, float v1, float v2, float v3) { e.m_motion_state.m_speed = {v1,v2,v3}; }
 void    setBackupSpd(Entity &e, float val) { e.m_motion_state.m_backup_spd = val; }
 void    setJumpHeight(Entity &e, float val) { e.m_motion_state.m_jump_height = val; }
 void    setUpdateID(Entity &e, uint8_t val) { e.m_motion_state.m_motion_state_id = val;}
@@ -320,9 +320,9 @@ void positionTest(Entity *e)
             .arg(fpvz.store);
 
     output += QString("Velocity <%1, %2, %3>\n")
-            .arg(e->m_velocity.x, 0, 'f', 1)
-            .arg(e->m_velocity.y, 0, 'f', 1)
-            .arg(e->m_velocity.z, 0, 'f', 1);
+            .arg(e->m_motion_state.m_velocity.x, 0, 'f', 1)
+            .arg(e->m_motion_state.m_velocity.y, 0, 'f', 1)
+            .arg(e->m_motion_state.m_velocity.z, 0, 'f', 1);
 
     qDebug().noquote() << output;
     if(e->m_client != nullptr)

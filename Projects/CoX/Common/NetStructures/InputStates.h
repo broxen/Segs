@@ -64,7 +64,6 @@ public:
 
     uint8_t     m_updated_bit_pos       = 7;
     uint16_t    m_control_bits[6]       = {0};
-    uint16_t    m_prev_control_bits[6]  = {0};  // maybe goes away?
     glm::vec3   m_camera_pyr            = {0.0f, 0.0f, 0.0f};
     glm::vec3   m_orientation_pyr;      // Stored in Radians
     glm::quat   m_direction;
@@ -84,6 +83,7 @@ public:
     bool        m_following             = false;
     glm::vec3   m_pos_start             = {0.0f, 0.0f, 0.0f};
     glm::vec3   m_pos_end               = {0.0f, 0.0f, 0.0f};
+    int         m_landing_recovery_time = {0};
 
     // Targeting
     bool        m_has_target;
@@ -104,8 +104,11 @@ public:
     // std::vector<SpeedState>  m_speed_states;
     // std::vector<MotionState>  m_motion_states;
 
-    void init() {
+    void init()
+    {
         InputState empty_state;
+        // Fill with two empty states for current() and previous()
+        addNewState(empty_state);
         addNewState(empty_state);
     }
 
