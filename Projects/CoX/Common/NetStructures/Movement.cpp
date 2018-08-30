@@ -186,7 +186,9 @@ void setVelocity(Entity &e) // pmotionSetVel
         for (int i = BinaryControl::FORWARD; i < BinaryControl::LAST_BINARY_VALUE; ++i)
         {
             press_time = state->m_keypress_time[i];
-            //qCDebug(logMovement) << "keypress_time" << i << press_time;
+
+            if(press_time > 0)
+                qCDebug(logMovement) << "keypress_time" << i << press_time;
 
             if(press_time > max_press_time)
                 max_press_time = state->m_keypress_time[i];
@@ -209,7 +211,8 @@ void setVelocity(Entity &e) // pmotionSetVel
             else
                 control_amounts[i] = 0.2f;
 
-            //qCDebug(logMovement) << "control_amounts:" << i << control_amounts[i];
+            if(control_amounts[i] > 0.0f)
+                qCDebug(logMovement) << "control_amounts:" << i << control_amounts[i];
         }
 
         state->m_move_time = max_press_time;
@@ -220,7 +223,8 @@ void setVelocity(Entity &e) // pmotionSetVel
         vel.y = vel.y * motion->m_speed.y;
         horiz_vel = vel;
 
-        if(e.m_type == EntType::PLAYER)
+        if(e.m_type == EntType::PLAYER
+                && glm::length(vel))
             qCDebug(logMovement) << "vel:" << glm::to_string(vel).c_str();
 
         if (!motion->m_is_flying)
@@ -237,7 +241,8 @@ void setVelocity(Entity &e) // pmotionSetVel
         else
             horiz_vel = glm::normalize(horiz_vel);
 
-        if(e.m_type == EntType::PLAYER)
+        if(e.m_type == EntType::PLAYER
+                && glm::length(horiz_vel))
             qCDebug(logMovement) << "horizVel:" << glm::to_string(horiz_vel).c_str();
 
         if (state->m_speed_scale != 0.0f)
@@ -273,6 +278,10 @@ void setVelocity(Entity &e) // pmotionSetVel
 
     motion->m_input_velocity = vel;
 
+    if(e.m_type == EntType::PLAYER
+            && glm::length(vel))
+        qCDebug(logMovement) << "final vel:" << glm::to_string(vel).c_str();
+
     if (e.m_char->m_char_data.m_afk && motion->m_input_velocity != glm::vec3(0,0,0))
     {
         if(e.m_type == EntType::PLAYER)
@@ -281,7 +290,7 @@ void setVelocity(Entity &e) // pmotionSetVel
         toggleAFK(*e.m_char);
     }
 
-    // setPlayerVelQuat(&vel, vel_scale_copy); // we don't need this
+    // setPlayerVelQuat(&vel, vel_scale_copy); // we don't need this?
 }
 
 void my_entMoveNoColl(Entity *ent)
@@ -294,7 +303,7 @@ void my_entMoveNoColl(Entity *ent)
     if ( time_scale > 50.0f )
         time_scale = 50.0f;
 
-    qCDebug(logMovement) << "BEFORE: m_pos_delta:" << glm::to_string(ent->m_states.current()->m_pos_delta).c_str()
+    qCDebug(logMovement) << "m_pos_delta:" << glm::to_string(ent->m_states.current()->m_pos_delta).c_str()
                          << "time_scale:" << time_scale
                          << "timestep_rel:" << ent->m_states.current()->m_time_state.m_timestep // formerly timestep
                          << "velocity:" << glm::to_string(ent->m_motion_state.m_velocity).c_str();
@@ -427,8 +436,8 @@ void checkJump(Entity *ent, InputState *new_state, SurfaceParams *surf_params)
             {
                 ent->m_motion_state.m_is_jumping        = true;
                 ent->m_motion_state.m_is_bouncing       = true;
-                ent->m_motion_state.m_jump_height       = ent->m_states.current()->m_pos_delta.y;        // formerly: ent->mat4.TranslationPart.y
-                ent->m_motion_state.m_max_jump_height   = new_state ? ent->m_motion_state.m_jump_height * 4.0 : 4.0f;  // formerly: cur_state ? cur_state.jump_height * 4.0 : 4.0f
+                ent->m_motion_state.m_jump_height       = ent->m_states.current()->m_pos_delta.y;
+                ent->m_motion_state.m_max_jump_height   = new_state ? ent->m_motion_state.m_jump_height * 4.0 : 4.0f;
                 ent->m_motion_state.m_jump_time         = 15;
                 ent->m_motion_state.m_has_jumppack      = true;
                 ent->m_motion_state.m_flag_5            = true;
@@ -465,7 +474,7 @@ void checkJump(Entity *ent, InputState *new_state, SurfaceParams *surf_params)
              && surf_params->gravity != 0.0f
              && ent->m_motion_state.m_is_falling)
     {
-        ent->m_motion_state.m_input_velocity.y = 0; // formerly: input_vel
+        ent->m_motion_state.m_input_velocity.y = 0;
     }
 }
 
@@ -488,14 +497,12 @@ void doPhysics(Entity *ent, SurfaceParams *surf_mods)
         if (numsteps > 5 || timestep >= 5.0f)
             numsteps = 5;
 
-        // probably shouldn't modify this client-provided value
-        //ent->m_states.current()->m_time_state.m_timestep /= float(numsteps);
+        ent->m_states.current()->m_time_state.m_timestep /= float(numsteps);
 
         for(int i=0; i<numsteps; ++i)
             doPhysicsOnce(ent, surf_mods);
 
-        // probably shouldn't modify this client-provided value
-        //ent->m_states.current()->m_time_state.m_timestep *= numsteps;
+        ent->m_states.current()->m_time_state.m_timestep *= numsteps;
     }
     else
         doPhysicsOnce(ent, surf_mods);
@@ -545,7 +552,7 @@ void entWalk(Entity *ent, InputState *new_state)
         ent->m_motion_state.m_velocity_scale = new_state->m_velocity_scale; // velocity?
 
     checkJump(ent, new_state, &surf_params);
-    s_landed_on_ground = 0;
+    s_landed_on_ground = 0;     // this should be stored in motion state
     doPhysics(ent, surf_mods);
 
     /* TODO: what? this part doesn't make sense
@@ -590,9 +597,9 @@ void entMotion(Entity *ent, InputState *new_state)
         else if(ent->m_move_type & MoveType::MOVETYPE_WALK )
         {
             debugmsg = "entMotion normal";
-            ent->m_motion_state.m_move_time = 0; // move_time
+            ent->m_motion_state.m_move_time = 0;
             entWalk(ent, new_state);
-            ent->m_motion_state.m_input_velocity = glm::vec3(0,0,0); // formerly inp_vel
+            ent->m_motion_state.m_input_velocity = glm::vec3(0,0,0);
         }
         else
         {
@@ -600,7 +607,7 @@ void entMotion(Entity *ent, InputState *new_state)
             ent->m_motion_state.m_is_falling = false;
         }
 
-        qCDebug(logMovement).noquote() << debugmsg;
+        //qCDebug(logMovement).noquote() << debugmsg;
     }
 }
 
@@ -868,8 +875,8 @@ void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
             float vel_with_traction = glm::length(ent->m_motion_state.m_input_velocity) * traction_rel;
             if (final_velocity.y < 0.0f)
             {
-                float v21 = 1.0f - glm::dot(tvel, final_velocity) / (glm::length(tvel) * glm::length(final_velocity)) * (1.0f - p_surf_normal->y);
-                max_speed = max_speed / std::max(0.1f, v21);
+                float tmp_vel = 1.0f - glm::dot(tvel, final_velocity) / (glm::length(tvel) * glm::length(final_velocity)) * (1.0f - p_surf_normal->y);
+                max_speed = max_speed / std::max(0.1f, tmp_vel);
             }
             else
             {
@@ -880,10 +887,8 @@ void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
 
         float traction_temp = std::min((1.0f - traction_rel) * 4.0f, 1.0f);
         tvel = tvel * (traction_temp * 0.5f);
-        glm::mat3 surf_mat;
 
         camLookAt(p_surf_normal, &surf_mat);
-
 
         glm::mat3 surf_mat_inv(surf_mat);
         glm::transpose(surf_mat_inv);
@@ -1041,9 +1046,36 @@ void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
     //ent->m_motion_state.m_walk_flags = s_last_surf.ctri ? s_last_surf.ctri->flags : 0;
 }
 
-bool checkHead(Entity */*ent*/, int /*val*/)
+bool checkHead(Entity *ent, int val)
 {
-    // TODO: requires collision
+    /*
+    CollInfo dest; // collision info
+
+    glm::vec3 finish = ent->m_states.current()->m_pos_delta + glm::vec3(0, 6, 0);
+    glm::vec3 start = ent->m_states.current()->m_pos_delta + glm::vec3(0, 1.5f, 0);
+    int coll_flag = CollFlags::COLL_NOTSELECTABLE | CollFlags::COLL_CYLINDER | CollFlags::COLL_DISTFROMSTART;
+
+    if(!s_coll_entblocker)
+        coll_flag |= CollFlags::COLL_ENTBLOCKER;
+
+    if(!collGrid(nullptr, &start, &finish, &dest, 1.0, coll_flag))
+        return false;
+
+    if(val)
+    {
+        float dist = ent->m_states.current()->m_pos_delta.y + 6.0f - dest.mat.TranslationPart.y;
+
+        if ( dist > 1.5f )
+        {
+            ent->m_states.current()->m_pos_delta = ent->m_motion_state.m_last_pos;
+            return true;
+        }
+
+        ent->m_states.current()->m_pos_delta.y += dist;
+    }
+    */
+
+    return true;
 }
 
 void checkFeet(Entity &/*ent*/, SurfaceParams &/*surf_params*/)
@@ -1054,6 +1086,7 @@ void checkFeet(Entity &/*ent*/, SurfaceParams &/*surf_params*/)
 int slideWall(Entity */*ent*/, glm::vec3 */*bottom*/, glm::vec3 */*top*/)
 {
     // TODO: requires collision
+    return 0;
 }
 
 void addPosUpdate(Entity &e, const PosUpdate &p)

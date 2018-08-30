@@ -872,7 +872,7 @@ void MapInstance::on_input_state(InputStateEvent *st)
     MapClientSession &session(m_session_store.session_from_event(st));
     Entity *   ent = session.m_ent;
 
-    ent->m_motion_state.m_last_pos = ent->m_entity_data.m_pos;
+    //ent->m_motion_state.m_last_pos = ent->m_entity_data.m_pos;
     ent->m_states.current()->m_pos_end = ent->m_entity_data.m_pos;
     st->m_next_state.m_pos_start = ent->m_entity_data.m_pos;
 

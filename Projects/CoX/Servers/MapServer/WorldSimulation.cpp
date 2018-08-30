@@ -77,8 +77,9 @@ void World::physicsStep(Entity *e,uint32_t msec)
         case 1:
         {
             entMotion(e, e->m_states.current());
-            e->m_states.current()->m_pos_delta = e->m_states.current()->m_time_state.m_timestep * (e->m_motion_state.m_last_pos - pud.m_position) + pud.m_position.x;
-            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos;
+            //e->m_states.current()->m_pos_delta = e->m_states.current()->m_time_state.m_timestep * (e->m_motion_state.m_last_pos - pud.m_position) + pud.m_position.x;
+            //e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * e->m_states.current()->m_time_state.m_time_rel1C;
             break;
         }
         case 2:
@@ -87,25 +88,27 @@ void World::physicsStep(Entity *e,uint32_t msec)
             //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * float(msec);
             break;
         default:
-            e->m_entity_data.m_pos += ((za*e->m_motion_state.m_velocity)*float(msec))/24; // formerly divide by 50
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + ((za*e->m_motion_state.m_velocity)*float(msec))/24; // formerly divide by 50
             //e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
             break;
         }
 
-        positionTest(e);
+        //positionTest(e);
         resetKeypressTime(e->m_states.current(), tp);
 
         e->m_interp_bintree = interpolateBinTree(e->m_pos_updates, 0.02f);
 
         if(e->m_type == EntType::PLAYER)
         {
-            float distance  = glm::distance(e->m_entity_data.m_pos, e->m_motion_state.m_last_pos);
+            float distance = glm::distance(e->m_entity_data.m_pos, e->m_motion_state.m_last_pos);
+            /*
             qCDebug(logMovement) << "physicsStep:"
                                        << "\n    prev_pos:\t"   << glm::to_string(e->m_motion_state.m_last_pos).c_str()
                                        << "\n    cur_pos:\t"    << glm::to_string(e->m_entity_data.m_pos).c_str()
                                        << "\n    distance:\t"   << distance
                                        << "\n    vel_scale:\t"  << vel_scale << e->m_states.current()->m_velocity_scale
                                        << "\n    velocity:\t"   << glm::to_string(e->m_motion_state.m_velocity).c_str();
+            */
         }
     }
 }
