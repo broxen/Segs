@@ -7,8 +7,7 @@
 
 #pragma once
 #include "MapEvents.h"
-//#include "NetStructures/Entity.h"
-#include "NetStructures/InputStates.h"
+#include "NetStructures/StateStorage.h"
 
 class InputStateEvent : public MapLinkEvent
 {

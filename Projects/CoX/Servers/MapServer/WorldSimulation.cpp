@@ -49,10 +49,15 @@ void World::physicsStep(Entity *e,uint32_t msec)
     if(e->m_states.current() == nullptr)
         return;
 
+    glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
+
+    auto tp = std::chrono::steady_clock::now();
+    calculateKeypressTime(e, e->m_states.current(), tp);
+    setVelocity(*e);
+
     if(glm::length2(e->m_states.current()->m_pos_delta))
     {
         // Get timestamp in ms
-        auto tp = std::chrono::steady_clock::now();
         auto now_ms = tp.time_since_epoch().count();
 
         // add PosUpdate
@@ -65,11 +70,6 @@ void World::physicsStep(Entity *e,uint32_t msec)
 
         int dt = pud.m_timestamp - prev.m_timestamp;
         float vel_scale = e->m_states.current()->m_velocity_scale/255.0f;
-
-        glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
-
-        calculateKeypressTime(e, e->m_states.current(), tp);
-        setVelocity(*e);
 
         // TODO: REMOVE: FOR TESTING ONLY
         switch(e->u1)
@@ -93,24 +93,23 @@ void World::physicsStep(Entity *e,uint32_t msec)
             break;
         }
 
-        //positionTest(e);
-        resetKeypressTime(e->m_states.current(), tp);
 
-        e->m_interp_bintree = interpolateBinTree(e->m_pos_updates, 0.02f);
-
-        if(e->m_type == EntType::PLAYER)
+        if(e->m_type == EntType::PLAYER && glm::length2(e->m_states.current()->m_pos_delta))
         {
             float distance = glm::distance(e->m_entity_data.m_pos, e->m_motion_state.m_last_pos);
-            /*
+
             qCDebug(logMovement) << "physicsStep:"
-                                       << "\n    prev_pos:\t"   << glm::to_string(e->m_motion_state.m_last_pos).c_str()
-                                       << "\n    cur_pos:\t"    << glm::to_string(e->m_entity_data.m_pos).c_str()
-                                       << "\n    distance:\t"   << distance
-                                       << "\n    vel_scale:\t"  << vel_scale << e->m_states.current()->m_velocity_scale
-                                       << "\n    velocity:\t"   << glm::to_string(e->m_motion_state.m_velocity).c_str();
-            */
+                                       << "\tprev_pos: "   << glm::to_string(e->m_motion_state.m_last_pos).c_str()
+                                       << "\tcur_pos: "    << glm::to_string(e->m_entity_data.m_pos).c_str()
+                                       << "\tdistance: "   << distance
+                                       << "\tvel_scale: "  << vel_scale << e->m_states.current()->m_velocity_scale
+                                       << "\tvelocity: "   << glm::to_string(e->m_motion_state.m_velocity).c_str();
         }
     }
+    resetKeypressTime(e->m_states.current(), tp);
+    //positionTest(e);
+
+    e->m_interp_bintree = interpolateBinTree(e->m_pos_updates, 0.02f);
 }
 
 float animateValue(float v,float start,float target,float length,float dT)

@@ -19,7 +19,6 @@
 #include "Logging.h"
 
 #include <glm/gtc/constants.hpp>
-#include <QDebug>
 #include <cmath>
 
 void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2

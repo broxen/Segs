@@ -7,7 +7,7 @@
 
 #pragma once
 #include "CommonNetStructures.h"
-#include "InputStates.h"
+#include "StateStorage.h"
 #include <glm/glm.hpp>
 
 class Entity;

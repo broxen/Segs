@@ -117,26 +117,24 @@ void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::stead
     }
 }
 
-/*
-void pmotionWithPrediction(Entity *ent, InputState *cs, glm::vec3 *new_vel, StateStorage *state_change)
+void pmotionWithPrediction(Entity *ent, InputState *controls, glm::vec3 *new_vel)
 {
-    cs->m_start_pos = cs->m_end_pos;
-    ent->mat4.TranslationPart = cs->end_pos;
-    ent->timestep = 1.0f;
+    controls->m_pos_start = controls->m_pos_end;
+    ent->m_states.current()->m_pos_delta = controls->m_pos_end;
+    //ent->m_states.current()->m_time_state.m_timestep = 1.0f;
     ent->m_motion_state.m_input_velocity = *new_vel;
 
-    if ( cs->recover_from_landing_timer )
-        --cs->recover_from_landing_timer;
+    if (controls->m_landing_recovery_time)
+        --controls->m_landing_recovery_time;
 
-    m_states->m_motion = ent->m_motion_state;
+    //m_states->m_motion = ent->m_motion_state;
     //dump_grid_coll_info = cs->controldebug;
 
-    entMotion(ent, cs);
+    entMotion(ent, controls);
 
     //dump_grid_coll_info = 0;
-    cs->m_end_pos = ent->mat4.TranslationPart;
+    controls->m_pos_end = ent->m_states.current()->m_pos_delta;
 }
-*/
 
 void resetKeypressTime(InputState *controls, std::chrono::steady_clock::time_point curtime)
 {
@@ -278,8 +276,7 @@ void setVelocity(Entity &e) // pmotionSetVel
 
     motion->m_input_velocity = vel;
 
-    if(e.m_type == EntType::PLAYER
-            && glm::length(vel))
+    if(e.m_type == EntType::PLAYER && glm::length(vel))
         qCDebug(logMovement) << "final vel:" << glm::to_string(vel).c_str();
 
     if (e.m_char->m_char_data.m_afk && motion->m_input_velocity != glm::vec3(0,0,0))
@@ -1046,7 +1043,7 @@ void entWorldCollide(Entity *ent, SurfaceParams *surface_params)
     //ent->m_motion_state.m_walk_flags = s_last_surf.ctri ? s_last_surf.ctri->flags : 0;
 }
 
-bool checkHead(Entity *ent, int val)
+bool checkHead(Entity */*ent*/, int /*val*/)
 {
     /*
     CollInfo dest; // collision info

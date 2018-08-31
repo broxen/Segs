@@ -11,7 +11,7 @@
 #include "Movement.h"
 #include "Powers.h"
 #include "Team.h"
-#include "InputStates.h"
+#include "StateStorage.h"
 #include "FixedPointValue.h"
 #include "StateInterpolator.h"
 #include "Common/GameData/entitydata_definitions.h"

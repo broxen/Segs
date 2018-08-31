@@ -9,7 +9,8 @@
  * @addtogroup NetStructures Projects/CoX/Common/NetStructures
  * @{
  */
-#include "InputStates.h"
+#include "StateStorage.h"
+
 #include "Movement.h"
 #include "Common/GameData/CoHMath.h"
 
@@ -67,13 +68,6 @@ void StateStorage::addNewState(InputState &new_state)
 
     new_state.m_pos_start = m_inp_states.back().m_pos_end;
     new_state.m_pos_delta = m_inp_states.back().m_pos_end;
-
-    // Only update if we've actually received an update
-    for(int i=0; i<3; ++i)
-    {
-        if(!new_state.m_pos_delta_valid[i])
-            new_state.m_pos_delta[i] = m_inp_states.back().m_pos_delta[i];
-    }
 
     bool update_needed=false;
     for(int i=0; i<3; ++i)

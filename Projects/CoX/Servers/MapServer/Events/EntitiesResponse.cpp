@@ -16,7 +16,7 @@
 #include "NetStructures/Entity.h"
 #include "NetStructures/Character.h"
 #include "NetStructures/Movement.h"
-#include "NetStructures/InputStates.h"
+#include "NetStructures/StateStorage.h"
 #include "GameData/playerdata_definitions.h"
 #include "MapClientSession.h"
 #include "MapEvents.h"
