@@ -58,9 +58,9 @@ public:
 
     uint8_t     m_csc_deltabits         = 0;
     uint16_t    m_send_id               = 0;
-    uint8_t     m_received_id           = 0;
+    uint8_t     m_every_4_ticks           = 0;
 
-    bool        m_autorun               = 0;    // send_bits? autorun?
+    bool        m_full_timeupdate               = 0;    // send_bits? autorun?
 
     uint8_t     m_updated_bit_pos       = 7;
     uint16_t    m_control_bits[6]       = {0};
@@ -77,8 +77,9 @@ public:
     bool        m_pos_delta_valid[3]    = {false};
     bool        m_pyr_valid[3]          = {false};
     glm::vec3   m_pos_delta             = {0.0f, 0.0f, 0.0f};
-    std::chrono::steady_clock::time_point m_keypress_start[6];                  // total_move
+    std::chrono::steady_clock::time_point m_keypress_start[6];
     float       m_keypress_time[6]      = {0};                  // total_move
+    std::chrono::steady_clock::duration m_svr_keypress_time[6];                  // for debugging
     float       m_move_time             = 0.0f;
     bool        m_following             = false;
     glm::vec3   m_pos_start             = {0.0f, 0.0f, 0.0f};

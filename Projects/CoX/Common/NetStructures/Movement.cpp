@@ -81,6 +81,7 @@ void processDirectionControl(InputState *next_state, uint8_t dir, int prev_time,
     }
 }
 
+// TODO: we probably don't need this server side.
 // pmotionUpdateControlsPrePhysics(ent, cs, current_timestamp_ms);
 void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::steady_clock::time_point cur_time)
 {
@@ -117,6 +118,7 @@ void calculateKeypressTime(Entity *ent, InputState *controls, std::chrono::stead
     }
 }
 
+// TODO: we probably don't need all of this. Maybe just landing recovery?
 void pmotionWithPrediction(Entity *ent, InputState *controls, glm::vec3 *new_vel)
 {
     controls->m_pos_start = controls->m_pos_end;
@@ -136,6 +138,7 @@ void pmotionWithPrediction(Entity *ent, InputState *controls, glm::vec3 *new_vel
     controls->m_pos_end = ent->m_states.current()->m_pos_delta;
 }
 
+// TODO: we probably don't need this server side.
 void resetKeypressTime(InputState *controls, std::chrono::steady_clock::time_point curtime)
 {
     for (int i = 0; i <= BinaryControl::LAST_BINARY_VALUE; ++i )
@@ -171,7 +174,7 @@ void setVelocity(Entity &e) // pmotionSetVel
         e.m_move_type &= ~MoveType::MOVETYPE_NOCOLL;
 
     if(state->m_no_collision
-            && state->m_autorun
+            && state->m_full_timeupdate
             && (motion->m_controls_disabled || state->m_landing_recovery_time || motion->m_has_headpain))
     {
         if(e.m_type == EntType::PLAYER)

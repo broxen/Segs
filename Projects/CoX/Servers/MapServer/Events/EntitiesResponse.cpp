@@ -571,7 +571,7 @@ void sendServerControlState(const EntitiesResponse &src,BitStream &bs)
     bs.StoreBits(1, ent->m_update_pos_and_cam);
     if(ent->m_update_pos_and_cam)
     {
-        bs.StorePackedBits(1, ent->m_states.current()->m_received_id); // sets g_client_pos_id_rel default = 0
+        bs.StorePackedBits(1, ent->m_states.current()->m_every_4_ticks); // sets g_client_pos_id_rel default = 0
         storeVector(bs, ent->m_entity_data.m_pos);   // server-side pos
         storeVectorConditional(bs, ent->m_motion_state.m_speed); // server-side spd
 

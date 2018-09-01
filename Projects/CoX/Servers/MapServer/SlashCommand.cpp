@@ -84,6 +84,7 @@ void cmdHandler_SendFloatingNumbers(const QString &cmd, MapClientSession &sess);
 void cmdHandler_ToggleInterp(const QString &cmd, MapClientSession &sess);
 void cmdHandler_ToggleMoveInstantly(const QString &cmd, MapClientSession &sess);
 void cmdHandler_ToggleCollision(const QString &cmd, MapClientSession &sess);
+void cmdHandler_ToggleMovementAuthority(const QString &cmd, MapClientSession &sess);
 void cmdHandler_SetSequence(const QString &cmd, MapClientSession &sess);
 void cmdHandler_AddTriggeredMove(const QString &cmd, MapClientSession &sess);
 void cmdHandler_AddTimeStateLog(const QString &cmd, MapClientSession &sess);
@@ -173,6 +174,7 @@ static const SlashCommand g_defined_slash_commands[] = {
     {{"toggleinterp"},"Toggle Interpolation", &cmdHandler_ToggleInterp, 9},
     {{"moveinstantly"},"Toggle move_instantly", &cmdHandler_ToggleMoveInstantly, 9},
     {{"collision"},"Toggle Collision on/off", &cmdHandler_ToggleCollision, 9},
+    {{"movement"},"Toggle server authority for Movement on/off", &cmdHandler_ToggleMovementAuthority, 9},
     {{"setSeq"},"Set Sequence values <update> <move_idx> <duration>", &cmdHandler_SetSequence, 9},
     {{"addTriggeredMove"},"Set TriggeredMove values <move_idx> <delay> <fx_idx>", &cmdHandler_AddTriggeredMove, 9},
     {{"setTimeStateLog"},"Set TimeStateLog value.", cmdHandler_AddTimeStateLog, 9},
@@ -727,6 +729,15 @@ void cmdHandler_ToggleMoveInstantly(const QString &cmd, MapClientSession &sess)
 void cmdHandler_ToggleCollision(const QString &cmd, MapClientSession &sess)
 {
     toggleCollision(*sess.m_ent);
+
+    QString msg = "Toggling " + cmd;
+    qCDebug(logSlashCommand) << msg;
+    sendInfoMessage(MessageChannel::DEBUG_INFO, msg, &sess);
+}
+
+void cmdHandler_ToggleMovementAuthority(const QString &cmd, MapClientSession &sess)
+{
+    toggleMovementAuthority(*sess.m_ent);
 
     QString msg = "Toggling " + cmd;
     qCDebug(logSlashCommand) << msg;

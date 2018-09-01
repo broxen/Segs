@@ -155,7 +155,8 @@ void    toggleFullUpdate(Entity &e) { e.m_full_update = !e.m_full_update; }
 void    toggleControlId(Entity &e) { e.m_has_control_id = !e.m_has_control_id; }
 void    toggleInterp(Entity &e) { e.m_has_interp = !e.m_has_interp; }
 void    toggleMoveInstantly(Entity &e) { e.m_move_instantly = !e.m_move_instantly; }
-void    toggleCollision(Entity &e)
+
+void toggleCollision(Entity &e)
 {
     e.m_motion_state.m_no_collision = !e.m_motion_state.m_no_collision;
     e.m_states.current()->m_no_collision = !e.m_states.current()->m_no_collision;
@@ -166,6 +167,12 @@ void    toggleCollision(Entity &e)
         e.m_move_type &= ~MoveType::MOVETYPE_NOCOLL;
 
     qDebug() << "Collision =" << QString::number(e.m_move_type, 2) << e.m_motion_state.m_no_collision << e.m_states.current()->m_no_collision;
+}
+
+void toggleMovementAuthority(Entity &e)
+{
+    toggleFullUpdate(e);
+    toggleControlId(e);
 }
 
 // Misc Methods
@@ -298,8 +305,10 @@ void positionTest(Entity *e)
     if(e->m_type != EntType::PLAYER)
         return;
 
-    QString output = "Position Test:\n";
+    QString output = "==== Position Test =======================\n";
 
+    output += QString("Move Time: %1\n")
+            .arg(e->m_states.current()->m_move_time, 0, 'f', 1);
 
     output += QString("Prev Pos <%1, %2, %3>\n")
             .arg(e->m_motion_state.m_last_pos.x, 0, 'f', 1)
@@ -319,10 +328,11 @@ void positionTest(Entity *e)
             .arg(fpvy.store)
             .arg(fpvz.store);
 
-    output += QString("Velocity <%1, %2, %3>\n")
+    output += QString("Velocity <%1, %2, %3> @ %4\n")
             .arg(e->m_motion_state.m_velocity.x, 0, 'f', 1)
             .arg(e->m_motion_state.m_velocity.y, 0, 'f', 1)
-            .arg(e->m_motion_state.m_velocity.z, 0, 'f', 1);
+            .arg(e->m_motion_state.m_velocity.z, 0, 'f', 1)
+            .arg(e->m_motion_state.m_velocity_scale/255, 0, 'f', 1);
 
     qDebug().noquote() << output;
     if(e->m_client != nullptr)

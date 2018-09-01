@@ -51,24 +51,19 @@ void World::physicsStep(Entity *e,uint32_t msec)
 
     glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
 
-    auto tp = std::chrono::steady_clock::now();
-    calculateKeypressTime(e, e->m_states.current(), tp);
+    //calculateKeypressTime(e, e->m_states.current(), tp);
     setVelocity(*e);
 
     if(glm::length2(e->m_states.current()->m_pos_delta))
     {
-        // Get timestamp in ms
-        auto now_ms = tp.time_since_epoch().count();
-
         // add PosUpdate
         PosUpdate prev      = e->m_pos_updates[(e->m_update_idx + -1 + 64) % 64];
         PosUpdate pud;
         pud.m_position      = e->m_entity_data.m_pos;
         pud.m_pyr_angles    = e->m_entity_data.m_orientation_pyr;
-        pud.m_timestamp     = now_ms;
+        pud.m_timestamp     = e->m_states.current()->m_time_state.m_client_timenow;
         addPosUpdate(*e, pud);
 
-        int dt = pud.m_timestamp - prev.m_timestamp;
         float vel_scale = e->m_states.current()->m_velocity_scale/255.0f;
 
         // TODO: REMOVE: FOR TESTING ONLY
@@ -93,21 +88,10 @@ void World::physicsStep(Entity *e,uint32_t msec)
             break;
         }
 
-
-        if(e->m_type == EntType::PLAYER && glm::length2(e->m_states.current()->m_pos_delta))
-        {
-            float distance = glm::distance(e->m_entity_data.m_pos, e->m_motion_state.m_last_pos);
-
-            qCDebug(logMovement) << "physicsStep:"
-                                       << "\tprev_pos: "   << glm::to_string(e->m_motion_state.m_last_pos).c_str()
-                                       << "\tcur_pos: "    << glm::to_string(e->m_entity_data.m_pos).c_str()
-                                       << "\tdistance: "   << distance
-                                       << "\tvel_scale: "  << vel_scale << e->m_states.current()->m_velocity_scale
-                                       << "\tvelocity: "   << glm::to_string(e->m_motion_state.m_velocity).c_str();
-        }
+        if(logMovement().isDebugEnabled() && e->m_type == EntType::PLAYER)
+            positionTest(e);
     }
-    resetKeypressTime(e->m_states.current(), tp);
-    //positionTest(e);
+    //resetKeypressTime(e->m_states.current(), tp);
 
     e->m_interp_bintree = interpolateBinTree(e->m_pos_updates, 0.02f);
 }

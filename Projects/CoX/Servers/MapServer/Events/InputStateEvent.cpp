@@ -27,6 +27,8 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
     uint32_t    ms_since_prev = 0;
     float       angle = 0.0f;
 
+    auto now_ms = std::chrono::steady_clock::now();
+
     do
     {   
         if(bs.GetBits(1))
@@ -49,8 +51,10 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
             {
                 bool keypress_state = bs.GetBits(1); // get keypress state
                 m_next_state.m_control_bits[control_id] = keypress_state; // save control_bits
+                m_next_state.m_svr_keypress_time[control_id] = now_ms - m_next_state.m_keypress_start[control_id];
                 //processDirectionControl(&m_next_state, control_id, ms_since_prev, keypress_state);
                 qCDebug(logInput, "key released %f", control_id);
+                qCDebug(logMovement, "svr vs client keypress time: %d %d", m_next_state.m_svr_keypress_time[control_id], ms_since_prev);
                 break;
             }
             case PITCH: // camera pitch (Insert/Delete keybinds)
@@ -72,33 +76,38 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
             case 8:
             {
                 m_next_state.m_controls_disabled = bs.GetBits(1);
-                if ( m_next_state.m_autorun ) // sent_run_physics. maybe autorun? maybe is_running?
+                if ( m_next_state.m_full_timeupdate ) // sent_run_physics. maybe autorun? maybe is_running?
                 {
                     m_next_state.m_time_diff1 = bs.GetPackedBits(8);   // value - previous_value
                     m_next_state.m_time_diff2 = bs.GetPackedBits(8);   // time - previous_time
                 }
                 else
                 {
-                    m_next_state.m_autorun = true;
+                    m_next_state.m_full_timeupdate = true;
                     m_next_state.m_time_diff1 = bs.GetBits(32);       // value
                     m_next_state.m_time_diff2 = bs.GetPackedBits(10); // value - time
                 }
-                /*
-                qCDebug(logInput, "Controls Disabled: %d \t time_diff1: %d \t time_diff2: %d",
-                        m_current.m_input_vel_scale, m_current.m_time_diff1, m_current.m_time_diff2);
-                */
+
+                qCDebug(logMovement, "Controls Disabled: %d  time_diff1: %d \t time_diff2: %d",
+                        m_next_state.m_controls_disabled, m_next_state.m_time_diff1, m_next_state.m_time_diff2);
 
                 if(bs.GetBits(1)) // if true velocity scale < 255
                 {
                     m_next_state.m_velocity_scale = bs.GetBits(8);
                     qCDebug(logInput, "Velocity Scale: %d", m_next_state.m_velocity_scale);
                 }
+                else
+                    m_next_state.m_velocity_scale = 255;
+
                 break;
             }
             case 9:
             {
-                m_next_state.m_received_id = bs.GetBits(8); // value is always 1?
-                //qCDebug(logInput, "Server Update ID: %d", m_current.m_received_server_update_id);
+                m_next_state.m_every_4_ticks = bs.GetBits(8); // value goes to 0 every 4 ticks. Some kind of send_partial flag
+
+                if(m_next_state.m_every_4_ticks != 1)
+                    qCDebug(logInput, "This goes to 0 every 4 ticks: %d", m_next_state.m_every_4_ticks);
+
                 break;
             }
             case 10:
@@ -112,6 +121,8 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
         }
 
     } while(bs.GetBits(1));
+
+    qCDebug(logInput, "recv control_id 9 %f", m_next_state.m_every_4_ticks);
 }
 
 void InputStateEvent::extended_input(BitStream &bs)
@@ -151,7 +162,7 @@ void InputStateEvent::extended_input(BitStream &bs)
 
 void InputStateEvent::serializefrom(BitStream &bs)
 {
-    m_next_state.m_autorun=false;
+    m_next_state.m_full_timeupdate = false; // possibly some kind of full_update flag that is used elsewhere also
 
     if(bs.GetBits(1))
         extended_input(bs);
@@ -203,12 +214,13 @@ void InputStateEvent::recv_client_opts(BitStream &bs)
     ClientOption *entry;
     glm::vec3 vec;
     int cmd_idx;
+
     while((cmd_idx = bs.GetPackedBits(1))!=0)
     {
         entry=opts.get(cmd_idx-1);
         if (!entry)
         {
-            qWarning() << "recv_client_opts missing opt for cmd index"<<cmd_idx-1;
+            qWarning() << "recv_client_opts missing opt for cmd index" << cmd_idx-1;
             continue;
         }
         for(ClientOption::Arg &arg : entry->m_args)

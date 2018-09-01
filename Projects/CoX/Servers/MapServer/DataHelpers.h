@@ -75,6 +75,7 @@ void    toggleControlId(Entity &e);
 void    toggleInterp(Entity &e);
 void    toggleMoveInstantly(Entity &e);
 void    toggleCollision(Entity &e);
+void    toggleMovementAuthority(Entity &e);
 
 // Misc Methods
 void    charUpdateDB(Entity *e);
