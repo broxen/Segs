@@ -21,6 +21,8 @@
 #include <glm/gtc/constants.hpp>
 #include <cmath>
 
+using namespace SEGSEvents;
+
 void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
 {
     uint8_t     control_id = 0;
@@ -40,6 +42,9 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
             ms_since_prev = bs.GetBits(2)+32; // delta from prev event
         else
             ms_since_prev = bs.GetBits(m_next_state.m_csc_deltabits);
+
+        if (control_id < 8)
+                    m_next_state.m_input_received = true;
 
         m_next_state.m_keypress_time[control_id] = ms_since_prev;
 
@@ -129,8 +134,8 @@ void InputStateEvent::extended_input(BitStream &bs)
 {
     bool keypress_state;
 
-    m_next_state.m_has_key_release = bs.GetBits(1);
-    if(m_next_state.m_has_key_release) // list of partial_2 follows
+    m_next_state.m_full_input_packet = bs.GetBits(1);
+    if(m_next_state.m_full_input_packet) // list of partial_2 follows
     {
         m_next_state.m_csc_deltabits = bs.GetBits(5) + 1; // number of bits in max_time_diff_ms
         m_next_state.m_send_id = bs.GetBits(16);
@@ -151,6 +156,9 @@ void InputStateEvent::extended_input(BitStream &bs)
             qCDebug(logInput, "key pressed down %f", idx);
         }
     }
+
+    if (m_next_state.m_control_bits != 0)
+            m_next_state.m_input_received = true;
 
     if(bs.GetBits(1)) //if ( abs(s_prevTime - ms_time) < 1000 )
     {

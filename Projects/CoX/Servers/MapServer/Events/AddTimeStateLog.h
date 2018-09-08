@@ -6,28 +6,32 @@
  */
 
 #pragma once
-#include "GameCommandList.h"
+#include "GameCommand.h"
+#include "MapEventTypes.h"
 
-#include "MapEvents.h"
-#include "MapLink.h"
-
-#include <QtCore/QString>
+namespace SEGSEvents
+{
 
 // [[ev_def:type]]
-class AddTimeStateLog final : public GameCommand
+class AddTimeStateLog final : public GameCommandEvent
 {
 public:
     // [[ev_def:field]]
     int m_time_log; // std::time instead?
 
-    AddTimeStateLog(int time_log) : GameCommand(MapEventTypes::evAddTimeStateLog),
+    explicit AddTimeStateLog() : GameCommandEvent(evAddTimeStateLog) {}
+    AddTimeStateLog(int time_log) : GameCommandEvent(evAddTimeStateLog),
         m_time_log(time_log)
     {
     }
-    void    serializeto(BitStream &bs) const override {
-        bs.StorePackedBits(1,type()-MapEventTypes::evFirstServerToClient);
+    void    serializeto(BitStream &bs) const override
+    {
+        bs.StorePackedBits(1,type()-evFirstServerToClient);
 
         bs.StorePackedBits(1, m_time_log);
     }
     void    serializefrom(BitStream &src);
+    EVENT_IMPL(AddTimeStateLog)
 };
+
+} // end of SEGSEvents namespace

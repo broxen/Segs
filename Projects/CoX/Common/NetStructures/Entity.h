@@ -29,6 +29,7 @@ struct MapClientSession;
 class Team;
 class Character;
 struct PlayerData;
+class GameDataStore;
 using Parse_AllKeyProfiles = std::vector<struct Keybind_Profiles>;
 
 enum class FadeDirection
@@ -139,7 +140,7 @@ class Entity
     using NPCPtr = std::unique_ptr<NPCData>;
 private:
                             Entity();
-virtual                     ~Entity();
+                            ~Entity();
 public:
         StateStorage        m_states;
         MotionState         m_motion_state;
@@ -201,6 +202,8 @@ public:
         bool                m_has_control_id        = true;  // EntityReponse sendServerPhysicsPositions
         bool                m_has_interp            = true; // EntityUpdateCodec storePosUpdate
 
+        bool                m_has_input_on_timeframe= false;
+
         int                 u1 = 0; // used for live-debugging
 
         std::array<PosUpdate, 64> m_pos_updates;
@@ -228,7 +231,7 @@ static  void                sendAllyID(BitStream &bs);
 static  void                sendPvP(BitStream &bs);
 
         const QString &     name() const;
-        void                fillFromCharacter();
+        void                fillFromCharacter(const GameDataStore &data);
         void                beginLogout(uint16_t time_till_logout=10); // Default logout time is 10 s
 };
 
@@ -241,6 +244,6 @@ enum class DbStoreFlags : uint32_t
 void markEntityForDbStore(Entity *e,DbStoreFlags f);
 void unmarkEntityForDbStore(Entity *e, DbStoreFlags f);
 void initializeNewPlayerEntity(Entity &e);
-void initializeNewNpcEntity(Entity &e, const Parse_NPC *src, int idx, int variant);
-void fillEntityFromNewCharData(Entity &e, BitStream &src, const ColorAndPartPacker *packer, const Parse_AllKeyProfiles &default_profiles);
+void initializeNewNpcEntity(const GameDataStore &data, Entity &e, const Parse_NPC *src, int idx, int variant);
+void fillEntityFromNewCharData(Entity &e, BitStream &src, const GameDataStore &data);
 extern void abortLogout(Entity *e);

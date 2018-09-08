@@ -27,9 +27,12 @@ namespace
     {
         filename = QDir::cleanPath(filename.toUpper());
         int loc = filename.indexOf("/SEQUENCERS/");
-        if(loc!=-1) {
+        if(loc!=-1)
+        {
             filename = filename.mid(loc+strlen("/SEQUENCERS/"));
-        } else {
+        }
+        else
+        {
             if(filename.startsWith("SEQUENCERS/")) // TODO: the original was comparing start of a1 with only 3 first letters of SEQUENCERS/, and than skipping the full length ?
             {
                 filename.remove(0,strlen("SEQUENCERS/"));
@@ -37,7 +40,7 @@ namespace
         }
     }
 
-    bool loadFrom(BinStore *s, Parser_CycleMove *target)
+    bool loadFrom(BinStore *s, SeqCycleMoveData *target)
     {
         bool ok = true;
         s->prepare();
@@ -47,7 +50,7 @@ namespace
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_NextMove *target)
+    bool loadFrom(BinStore *s, SeqNextMoveData *target)
     {
         bool ok = true;
         s->prepare();
@@ -57,7 +60,7 @@ namespace
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_MoveTypeAnim *target)
+    bool loadFrom(BinStore *s, SeqMoveDataTypeAnim *target)
     {
         bool ok = true;
         s->prepare();
@@ -81,7 +84,7 @@ namespace
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_MoveType *target)
+    bool loadFrom(BinStore *s, SeqMoveTypeData *target)
     {
         bool ok = true;
         s->prepare();
@@ -102,22 +105,27 @@ namespace
         while(s->nesting_name(_name))
         {
             s->nest_in();
-            if(_name.compare("Anim")==0) {
-                Parser_MoveTypeAnim *nt = new Parser_MoveTypeAnim;
+            if(_name.compare("Anim")==0)
+            {
+                SeqMoveDataTypeAnim *nt = new SeqMoveDataTypeAnim;
                 ok &= loadFrom(s,nt);
                 target->m_Anim.push_back(nt);
-            } else if(_name.compare("PlayFx")==0) {
+            }
+            else if(_name.compare("PlayFx")==0)
+            {
                 Parser_PlayFx *nt = new Parser_PlayFx;
                 ok &= loadFrom(s,nt);
                 target->m_PlayFx.push_back(nt);
-            } else
+            }
+            else
                 assert(!"unknown field referenced.");
+
             s->nest_out();
         }
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_Move *target)
+    bool loadFrom(BinStore *s, SeqMoveData *target)
     {
         bool ok = true;
         s->prepare();
@@ -143,27 +151,34 @@ namespace
         while(s->nesting_name(_name))
         {
             s->nest_in();
-            if(_name.compare("NextMove")==0) {
-                Parser_NextMove *nt = new Parser_NextMove;
+            if(_name.compare("NextMove")==0)
+            {
+                SeqNextMoveData *nt = new SeqNextMoveData;
                 ok &= loadFrom(s,nt);
                 target->m_NextMove.push_back(nt);
-            } else if(_name.compare("CycleMove")==0) {
-                Parser_CycleMove *nt = new Parser_CycleMove;
+            }
+            else if(_name.compare("CycleMove")==0)
+            {
+                SeqCycleMoveData *nt = new SeqCycleMoveData;
                 ok &= loadFrom(s,nt);
                 target->m_CycleMove.push_back(nt);
-            } else if(_name.compare("Type")==0) {
-                Parser_MoveType *nt = new Parser_MoveType;
+            }
+            else if(_name.compare("Type")==0)
+            {
+                SeqMoveTypeData *nt = new SeqMoveTypeData;
                 ok &= loadFrom(s,nt);
                 target->m_Type.push_back(nt);
-            } else
+            }
+            else
                 assert(!"unknown field referenced.");
+
             assert(ok);
             s->nest_out();
         }
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_GroupName *target)
+    bool loadFrom(BinStore *s, SeqGroupNameData *target)
     {
         bool ok = true;
         s->prepare();
@@ -173,7 +188,7 @@ namespace
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_SeqTypeDef *target)
+    bool loadFrom(BinStore *s, SeqTypeDefData *target)
     {
         bool ok = true;
         s->prepare();
@@ -185,7 +200,7 @@ namespace
         return ok;
     }
 
-    bool loadFrom(BinStore *s, Parser_Sequencer *target)
+    bool loadFrom(BinStore *s, SequencerData *target)
     {
         s->prepare();
         bool ok = true;
@@ -199,17 +214,17 @@ namespace
         {
             s->nest_in();
             if(_name.compare("TypeDef")==0) {
-                Parser_SeqTypeDef *nt = new Parser_SeqTypeDef;
+                SeqTypeDefData *nt = new SeqTypeDefData;
                 ok &= loadFrom(s,nt);
                 assert(ok);
                 target->m_TypeDef.push_back(nt);
             } else if(_name.compare("Group")==0) {
-                Parser_GroupName *nt = new Parser_GroupName;
+                SeqGroupNameData *nt = new SeqGroupNameData;
                 ok &= loadFrom(s,nt);
                 assert(ok);
                 target->m_Group.push_back(nt);
             } else if(_name.compare("Move")==0) {
-                Parser_Move *nt = new Parser_Move;
+                SeqMoveData *nt = new SeqMoveData;
                 ok &= loadFrom(s,nt);
                 assert(ok);
                 target->m_Move.push_back(nt);
@@ -235,7 +250,7 @@ bool loadFrom(BinStore *s, SequencerList *target)
     {
         s->nest_in();
         if(_name.compare("Sequencer")==0) {
-            Parser_Sequencer nt;
+            SequencerData nt;
             ok &= loadFrom(s,&nt);
             seqCleanSeqFileName(nt.name);       // this was done after reading, no reason to not do this now.
             target->m_Sequencers[QString(nt.name).toLower()] = nt;

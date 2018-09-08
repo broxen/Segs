@@ -58,7 +58,7 @@ public:
 
     uint8_t     m_csc_deltabits         = 0;
     uint16_t    m_send_id               = 0;
-    uint8_t     m_every_4_ticks           = 0;
+    uint8_t     m_every_4_ticks         = 0;
 
     bool        m_full_timeupdate               = 0;    // send_bits? autorun?
 
@@ -73,7 +73,8 @@ public:
     float       m_speed_scale           = 1.0f;
     bool        m_no_collision          = false;
     bool        m_controls_disabled     = false;
-    bool        m_has_key_release       = 0;
+    bool        m_full_input_packet     = 0;
+    bool        m_input_received        = false;
     bool        m_pos_delta_valid[3]    = {false};
     bool        m_pyr_valid[3]          = {false};
     glm::vec3   m_pos_delta             = {0.0f, 0.0f, 0.0f};
@@ -93,7 +94,28 @@ public:
 
     TimeState   m_time_state;
 
-    //InputState & operator=(const InputState &other);
+    InputState & operator=(const InputState &other);
+
+    template<class Archive>
+    void serialize(Archive &ar)
+    {
+        ar(m_csc_deltabits);
+        ar(m_control_bits);
+        ar(m_send_id);
+        ar(m_camera_pyr);
+        ar(m_orientation_pyr);
+        ar(m_direction);
+        ar(m_time_diff1);
+        ar(m_time_diff2);
+        ar(m_velocity_scale);
+        ar(m_every_4_ticks);
+        ar(m_no_collision);
+        ar(m_full_input_packet);
+        ar(m_pos_delta_valid);
+        ar(m_pyr_valid);
+        ar(m_pos_delta);
+        ar(m_controls_disabled);
+    }
 };
 
 class StateStorage

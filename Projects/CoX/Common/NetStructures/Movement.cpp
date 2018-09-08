@@ -14,6 +14,7 @@
 
 #include "Entity.h"
 #include "Character.h"
+#include "CharacterHelpers.h"
 #include "Servers/MapServer/DataHelpers.h"
 #include "Common/GameData/CoHMath.h"
 #include "Common/GameData/seq_definitions.h"

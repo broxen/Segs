@@ -44,7 +44,7 @@ void World::update(const ACE_Time_Value &tick_timer)
     }
 }
 
-void World::physicsStep(Entity *e,uint32_t msec)
+void World::physicsStep(Entity *e, uint32_t msec)
 {
     if(e->m_states.current() == nullptr)
         return;
@@ -89,7 +89,7 @@ void World::physicsStep(Entity *e,uint32_t msec)
         }
 
         if(logMovement().isDebugEnabled() && e->m_type == EntType::PLAYER)
-            positionTest(e);
+            positionTest(e->m_client);
     }
     //resetKeypressTime(e->m_states.current(), tp);
 

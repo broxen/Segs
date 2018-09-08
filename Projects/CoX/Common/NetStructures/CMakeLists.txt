@@ -1,4 +1,6 @@
 SET(target_CPP
+${CMAKE_CURRENT_SOURCE_DIR}/Character.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/CharacterHelpers.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/CommonNetStructures.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Character.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/Costume.cpp
@@ -15,6 +17,7 @@ SET(target_INCLUDE
 ${CMAKE_CURRENT_SOURCE_DIR}/CommonNetStructures.h
 ${CMAKE_CURRENT_SOURCE_DIR}/Character.h
 ${CMAKE_CURRENT_SOURCE_DIR}/Contact.h
+${CMAKE_CURRENT_SOURCE_DIR}/CharacterHelpers.h
 ${CMAKE_CURRENT_SOURCE_DIR}/Costume.h
 ${CMAKE_CURRENT_SOURCE_DIR}/Entity.h
 ${CMAKE_CURRENT_SOURCE_DIR}/Friend.h
