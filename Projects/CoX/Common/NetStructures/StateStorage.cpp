@@ -62,12 +62,11 @@ void TimeState::dump()
 
 void StateStorage::addNewState(InputState &new_state)
 {
-
     if(m_inp_states.size() < 1)
         m_inp_states.push_back(new_state);
 
-    new_state.m_pos_start = m_inp_states.back().m_pos_end;
-    new_state.m_pos_delta = m_inp_states.back().m_pos_end;
+    //new_state.m_pos_start = m_inp_states.back().m_pos_end;
+    //new_state.m_pos_delta = m_inp_states.back().m_pos_end;
 
     bool update_needed=false;
     for(int i=0; i<3; ++i)
@@ -82,11 +81,13 @@ void StateStorage::addNewState(InputState &new_state)
     if(update_needed)
         new_state.m_direction = fromCoHYpr(new_state.m_orientation_pyr);
 
-
     m_inp_states.push_back(new_state);
     // m_time_states.push_back(new_time_state);
     // m_speed_states.push_back(new_speed_state);
     // m_motion_states.push_back(new_motion_state);
+
+    if(m_inp_states.size() > 30)
+        m_inp_states.pop_front();
 }
 
 //! @}

@@ -51,11 +51,18 @@ void World::physicsStep(Entity *e, uint32_t msec)
 
     glm::mat3 za = static_cast<glm::mat3>(e->m_direction); // quat to mat3x3 conversion
 
-    //calculateKeypressTime(e, e->m_states.current(), tp);
+    // Get timestamp
+    auto tp = std::chrono::steady_clock::now();
+
+    calculateKeypressTime(e, e->m_states.current(), tp);
     setVelocity(*e);
 
-    if(glm::length2(e->m_states.current()->m_pos_delta))
+    if(glm::length2(e->m_motion_state.m_velocity))
     {
+        qDebug() << "Before";
+        if(logMovement().isDebugEnabled() && e->m_type == EntType::PLAYER)
+            positionTest(e->m_client);
+
         // add PosUpdate
         PosUpdate prev      = e->m_pos_updates[(e->m_update_idx + -1 + 64) % 64];
         PosUpdate pud;
@@ -63,8 +70,6 @@ void World::physicsStep(Entity *e, uint32_t msec)
         pud.m_pyr_angles    = e->m_entity_data.m_orientation_pyr;
         pud.m_timestamp     = e->m_states.current()->m_time_state.m_client_timenow;
         addPosUpdate(*e, pud);
-
-        float vel_scale = e->m_states.current()->m_velocity_scale/255.0f;
 
         // TODO: REMOVE: FOR TESTING ONLY
         switch(e->u1)
@@ -79,19 +84,20 @@ void World::physicsStep(Entity *e, uint32_t msec)
         }
         case 2:
             my_entMoveNoColl(e);
-            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos;
-            //e->m_entity_data.m_pos += e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * float(msec);
+            //e->m_entity_data.m_pos = e->m_motion_state.m_last_pos;
+            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + e->m_motion_state.m_velocity * float(msec);
             break;
         default:
-            e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + ((za*e->m_motion_state.m_velocity)*float(msec))/24; // formerly divide by 50
-            //e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
+            //e->m_entity_data.m_pos = e->m_motion_state.m_last_pos + ((za * e->m_motion_state.m_velocity)*float(msec))/50;
+            e->m_entity_data.m_pos += ((za*e->m_states.current()->m_pos_delta)*float(msec))/24; // formerly divide by 50
             break;
         }
 
+        qDebug() << "After";
         if(logMovement().isDebugEnabled() && e->m_type == EntType::PLAYER)
             positionTest(e->m_client);
     }
-    //resetKeypressTime(e->m_states.current(), tp);
+    resetKeypressTime(e->m_states.current(), tp);
 
     e->m_interp_bintree = interpolateBinTree(e->m_pos_updates, 0.02f);
 }

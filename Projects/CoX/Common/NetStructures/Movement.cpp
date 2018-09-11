@@ -159,7 +159,7 @@ int checkEntColl(Entity *ent, int bouncing)
 
 void setVelocity(Entity &e) // pmotionSetVel
 {
-    InputState *state   = e.m_states.current();
+    InputState  *state  = &e.m_states.m_inp_states.back();
     MotionState *motion = &e.m_motion_state;
     glm::vec3   horiz_vel       = {0, 0, 0};
     glm::vec3   vel             = {0, 0, 0};
@@ -292,12 +292,13 @@ void setVelocity(Entity &e) // pmotionSetVel
     }
 
     // setPlayerVelQuat(&vel, vel_scale_copy); // we don't need this?
+    motion->m_velocity = vel * vel_scale_copy/255;
 }
 
 void my_entMoveNoColl(Entity *ent)
 {
     ent->m_motion_state.m_is_falling = true;
-    ent->m_motion_state.m_velocity = glm::vec3(0,0,0);
+    //ent->m_motion_state.m_velocity = glm::vec3(0,0,0);
     ent->m_motion_state.m_move_time += ent->m_states.current()->m_time_state.m_timestep;
     float time_scale = (ent->m_motion_state.m_move_time + 6.0f) / 6.0f;
 

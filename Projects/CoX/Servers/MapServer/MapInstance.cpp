@@ -965,15 +965,19 @@ void MapInstance::on_input_state(InputStateEvent *st)
     MapClientSession &session(m_session_store.session_from_event(st));
     Entity *   ent = session.m_ent;
 
-    //ent->m_motion_state.m_last_pos = ent->m_entity_data.m_pos;
-    ent->m_states.current()->m_pos_end = ent->m_entity_data.m_pos;
-    st->m_next_state.m_pos_start = ent->m_entity_data.m_pos;
+    // Save current position to last_pos
+    ent->m_motion_state.m_last_pos      = ent->m_entity_data.m_pos;
+    ent->m_states.current()->m_pos_end  = ent->m_entity_data.m_pos;
+    st->m_next_state.m_pos_start        = ent->m_entity_data.m_pos;
 
+    // Add new input state
     ent->m_states.addNewState(st->m_next_state);
 
+    // Set current Input Packet ID
     if (st->m_next_state.m_full_input_packet)
         ent->m_input_pkt_id = st->m_next_state.m_send_id;
 
+    // Check for input
     if (st->m_next_state.m_input_received)
         ent->m_has_input_on_timeframe = st->m_next_state.m_input_received;
 

@@ -57,7 +57,7 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
                 bool keypress_state = bs.GetBits(1); // get keypress state
                 m_next_state.m_control_bits[control_id] = keypress_state; // save control_bits
                 m_next_state.m_svr_keypress_time[control_id] = now_ms - m_next_state.m_keypress_start[control_id];
-                //processDirectionControl(&m_next_state, control_id, ms_since_prev, keypress_state);
+                processDirectionControl(&m_next_state, control_id, ms_since_prev, keypress_state);
                 qCDebug(logInput, "key released %f", control_id);
                 qCDebug(logMovement, "svr vs client keypress time: %d %d", m_next_state.m_svr_keypress_time[control_id], ms_since_prev);
                 break;
@@ -93,8 +93,10 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
                     m_next_state.m_time_diff2 = bs.GetPackedBits(10); // value - time
                 }
 
+                /*
                 qCDebug(logMovement, "Controls Disabled: %d  time_diff1: %d \t time_diff2: %d",
                         m_next_state.m_controls_disabled, m_next_state.m_time_diff1, m_next_state.m_time_diff2);
+                */
 
                 if(bs.GetBits(1)) // if true velocity scale < 255
                 {

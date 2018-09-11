@@ -121,7 +121,7 @@ public:
 class StateStorage
 {
 public:
-    std::vector<InputState> m_inp_states;
+    QVector<InputState> m_inp_states;
     // TODO: maybe move these other states here and vectorize StateStorage?
     // std::vector<TimeState>  m_time_states;
     // std::vector<SpeedState>  m_speed_states;
@@ -135,10 +135,10 @@ public:
         addNewState(empty_state);
     }
 
-    InputState* current() { return &*m_inp_states.rbegin(); }
-    InputState* previous() { return &*m_inp_states.rbegin()+1; }
-    const InputState* current() const { return &*m_inp_states.rbegin(); }
-    const InputState* previous() const { return &*m_inp_states.rbegin()+1; }
+    InputState* current() { return &m_inp_states.back(); }
+    InputState* previous() { return &m_inp_states.back()-1; }
+    const InputState* current() const { return &m_inp_states.back(); }
+    const InputState* previous() const { return &m_inp_states.back()-1; }
 
     void addNewState(InputState &new_state);
 };
