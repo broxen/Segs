@@ -460,7 +460,7 @@ void messageOutput(MessageChannel ch, QString &msg, Entity &tgt)
 void sendTimeStateLog(MapClientSession &src, uint32_t control_log)
 {
     qCDebug(logSlashCommand, "Sending %d ControlLog %d", control_log);
-    src.addCommandToSendNextUpdate(std::unique_ptr<AddTimeStateLog>(new AddTimeStateLog(control_log)));
+    src.addCommand<AddTimeStateLog>(control_log);
 }
 
 void sendClientState(MapClientSession &ent, ClientStates client_state)
@@ -544,6 +544,24 @@ void sendTeamOffer(Entity *src, Entity *tgt)
 
     qCDebug(logTeams) << "Sending Teamup Offer" << db_id << name << type;
     tgt->m_client->addCommandToSendNextUpdate(std::unique_ptr<TeamOffer>(new TeamOffer(db_id, name, type)));
+}
+
+void sendFaceEntity(Entity *src, uint8_t tgt_idx)
+{
+    qCDebug(logOrientation) << QString("Sending Face Entity to %1").arg(tgt_idx);
+    src->m_client->addCommandToSendNextUpdate(std::unique_ptr<FaceEntity>(new FaceEntity(tgt_idx)));
+}
+
+void sendFaceLocation(Entity *src, glm::vec3 &loc)
+{
+    qCDebug(logOrientation) << QString("Sending Face Location to x: %1 y: %2 z: %3").arg(loc.x).arg(loc.y).arg(loc.z);
+    src->m_client->addCommandToSendNextUpdate(std::unique_ptr<FaceLocation>(new FaceLocation(loc)));
+}
+
+void sendDoorMessage(MapClientSession &tgt, uint32_t delay_status, QString &msg)
+{
+    qCDebug(logMapXfers) << QString("Sending Door Message; delay: %1 msg: %2").arg(delay_status).arg(msg);
+    tgt.addCommand<DoorMessage>(DoorMessageStatus(delay_status), msg);
 }
 
 

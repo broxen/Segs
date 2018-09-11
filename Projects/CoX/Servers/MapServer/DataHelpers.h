@@ -118,6 +118,9 @@ void sendFriendsListUpdate(Entity *src, const FriendsList &friends_list);
 void sendSidekickOffer(Entity *tgt, uint32_t src_db_id);
 void sendTeamLooking(Entity *tgt);
 void sendTeamOffer(Entity *src, Entity *tgt);
+void sendFaceEntity(Entity *src, uint8_t tgt_idx);
+void sendFaceLocation(Entity *src, glm::vec3 &location);
+void sendDoorMessage(MapClientSession &tgt, uint32_t delay_status, QString &msg);
 
 
 /*

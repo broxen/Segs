@@ -25,6 +25,7 @@
 #include <cmath>
 #include <limits>
 #include <sstream>
+#include <memory>
 
 //TODO: this file needs to know the MapInstance's WorldSimulation rate - Maybe extract it as a configuration object ?
 
@@ -155,10 +156,11 @@ void initializeNewPlayerEntity(Entity &e)
     e.m_move_type                       = MoveType::MOVETYPE_WALK;
     e.m_motion_state.m_is_falling       = true;
 
-    e.m_char.reset(new Character);
-    e.m_player.reset(new PlayerData);
+    e.m_char = std::make_unique<Character>();
+    e.m_player = std::make_unique<PlayerData>();
     e.m_player->reset();
-    e.m_entity.reset(new EntityData);
+
+    e.m_entity = std::make_unique<EntityData>();
     e.m_update_anims = e.m_entity_full_update   = true;
 
     e.m_states.init(); // Initialize movement input state pointers
@@ -176,6 +178,7 @@ void initializeNewPlayerEntity(Entity &e)
         p.m_timestamp = now_ms;
         addPosUpdate(e, p);
     }
+
 }
 
 
@@ -198,10 +201,10 @@ void initializeNewNpcEntity(const GameDataStore &data, Entity &e, const Parse_NP
     e.m_move_type                       = MoveType::MOVETYPE_WALK;
     e.m_motion_state.m_is_falling       = true;
 
-    e.m_char.reset(new Character);
-    e.m_npc.reset(new NPCData{false,src,idx,variant});
+    e.m_char = std::make_unique<Character>();
+    e.m_npc = std::make_unique<NPCData>(NPCData{false,src,idx,variant});
     e.m_player.reset();
-    e.m_entity.reset(new EntityData);
+    e.m_entity = std::make_unique<EntityData>();
     e.m_update_anims = e.m_entity_full_update   = true;
 
     e.m_states.init(); // Initialize movement input state pointers

@@ -17,7 +17,7 @@ class AddTimeStateLog final : public GameCommandEvent
 {
 public:
     // [[ev_def:field]]
-    int m_time_log; // std::time instead?
+    int m_time_log = 0;
 
     explicit AddTimeStateLog() : GameCommandEvent(evAddTimeStateLog) {}
     AddTimeStateLog(int time_log) : GameCommandEvent(evAddTimeStateLog),
@@ -26,11 +26,10 @@ public:
     }
     void    serializeto(BitStream &bs) const override
     {
-        bs.StorePackedBits(1,type()-evFirstServerToClient);
-
+        bs.StorePackedBits(1,type()-evFirstServerToClient); // pkt 60
         bs.StorePackedBits(1, m_time_log);
     }
-    void    serializefrom(BitStream &src);
+
     EVENT_IMPL(AddTimeStateLog)
 };
 

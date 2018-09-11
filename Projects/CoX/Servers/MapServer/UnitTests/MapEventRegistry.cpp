@@ -27,6 +27,7 @@ namespace
         "CookieRequest",
         "DescriptionAndBattleCry",
         "DialogButton",
+        "DoorMessage",
         "EmailHeaders",
         "EmailMessageStatus",
         "EmailRead",
