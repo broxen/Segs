@@ -12,18 +12,19 @@
 #include "MapSceneGraph.h"
 
 #include "GameData/CoHMath.h"
-#include "MapServerData.h"
+#include "GameData/GameDataStore.h"
 #include "SceneGraph.h"
 #include "EntityStorage.h"
 #include "Logging.h"
 #include "Common/NetStructures/Character.h"
 #include "NpcGenerator.h"
 #include "MapInstance.h"
-#include "NpcStore.h"
+#include "GameData/NpcStore.h"
 
 #include "glm/mat4x4.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <QSet>
+#include <memory>
 
 namespace
 {
@@ -41,7 +42,7 @@ MapSceneGraph::~MapSceneGraph()
 
 bool MapSceneGraph::loadFromFile(const QString &filename)
 {
-    m_scene_graph.reset(new SceneGraph);
+    m_scene_graph = std::make_unique<SceneGraph>();
     LoadingContext ctx;
     ctx.m_target = m_scene_graph.get();
     int geobin_idx= filename.indexOf("geobin");
@@ -68,6 +69,7 @@ void walkSceneNode( SceneNode *self, const glm::mat4 &accumulated, std::function
 {
     if (!visit_func(self, accumulated))
         return;
+
     for(const auto & child : self->children)
     {
         glm::mat4 transform(child.m_matrix2);
@@ -121,6 +123,7 @@ struct NpcCreator
 
     bool checkPersistent(SceneNode *n, const glm::mat4 &v)
     {
+        assert(map_instance);
         bool has_npc = false;
         QString persistent_name;
         for (GroupProperty_Data &prop : *n->properties)
@@ -144,8 +147,10 @@ struct NpcCreator
             if (npc_def)
             {
                 int idx = npc_store.npc_idx(npc_def);
-                Entity *e = map_instance->m_entities.CreateNpc(*npc_def, idx, 0);
-                forcePosition(*e, glm::vec3(v[3]));
+
+                Entity *e = map_instance->m_entities.CreateNpc(map_instance->serverData(),*npc_def, idx, 0);
+                forcePosition(*e,glm::vec3(v[3]));
+
                 auto valquat = glm::quat_cast(v);
 
                 glm::vec3 angles = glm::eulerAngles(valquat);

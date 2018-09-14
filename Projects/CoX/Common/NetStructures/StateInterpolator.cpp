@@ -16,6 +16,7 @@
 #include <glm/vec3.hpp>
 #include <glm/common.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 
 #include <cstdio>
 #include <cstdlib>
@@ -407,9 +408,9 @@ int runTest(Entity &e)
 
     for(PosUpdate &puv : pos_vals) {
         puv.m_position = {
-            std::sin(float(M_PI/12)*t)*10,
-            std::sin(float(M_PI/22)*t)*10,
-            std::sin(float(M_PI/8)*t)*10
+            std::sin((glm::pi<float>() / 12.0f) * t) * 10,
+            std::sin((glm::pi<float>() / 22.0f) * t) * 10,
+            std::sin((glm::pi<float>() /  9.0f) * t) * 10
         };
         puv.m_timestamp = t_start+t*10;
         t++;
@@ -423,8 +424,9 @@ int runTest(Entity &e)
 
     interpolatePosUpdates(&e, tgt);
 
-    vec3 errsum;
-    for(int i=0; i<64; ++i) {
+    vec3 errsum {0,0,0};
+    for(int i=0; i<9; ++i)
+    {
         errsum +=  glm::abs(e.m_pos_updates[i].m_position - pos_vals[i].m_position);
     }
     errsum = errsum/9.0f;

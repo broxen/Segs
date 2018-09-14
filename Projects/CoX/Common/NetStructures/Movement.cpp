@@ -14,6 +14,7 @@
 
 #include "Entity.h"
 #include "Character.h"
+#include "CharacterHelpers.h"
 #include "Servers/MapServer/DataHelpers.h"
 #include "Common/GameData/CoHMath.h"
 #include "Common/GameData/seq_definitions.h"
@@ -31,17 +32,6 @@ SurfaceParams g_world_surf_params[2] = {
     { 1.00f, 0.45f, 0.01f, 0.065f, 1.00f }, // ground; from client
     { 0.02f, 0.01f, 0.00f, 0.065f, 1.00f }  // air; from client
 };
-
-/* can replace with: glm::vec3 reflect = glm::reflect(incident, norm);
-static void f_reflect(glm::vec3 *norm, glm::vec3 *reflect, glm::vec3 *incident)
-{
-    glm::vec3 working_vec   = *incident;
-    float normalized_vec    = working_vec.normalize(); // glm::normalize(working_vec);
-    float dot_product       = norm->dot(- working_vec);
-    // update reflection
-    *reflect = (2*dot_product * *norm + working_vec) * normalized_vec;
-}
-*/
 
 void roundVelocityToZero(glm::vec3 *vel)
 {
@@ -87,7 +77,6 @@ void setVelocity(Entity &e)
     float       control_vals[6] = {0};
     glm::vec3   horiz_vel       = {0, 0, 0};
     float       max_press_time  = 0.0f;
-    float       press_time      = 100.0f;
     glm::vec3   vel             = {0, 0, 0};
 
     if (e.m_states.current()->m_no_collision)
@@ -108,7 +97,7 @@ void setVelocity(Entity &e)
     {
         for (int i = BinaryControl::FORWARD; i < BinaryControl::LAST_BINARY_VALUE; ++i)
         {
-            press_time = e.m_states.current()->m_keypress_time[i]*30;
+            float press_time = e.m_states.current()->m_keypress_time[i]*30;
             //qCDebug(logMovement) << "keypress_time" << i << e.inp_state.m_keypress_time[i];
             max_press_time = std::max(press_time, max_press_time);
             if (i >= BinaryControl::UP && !e.m_motion_state.m_is_flying) // UP or Fly
@@ -166,8 +155,8 @@ void setVelocity(Entity &e)
         else
         {
             vel.y *= glm::clamp(e.m_motion_state.m_jump_height, 0.0f, 1.0f);
-            //if (!e.m_is_sliding)
-                //ent->motion.flag_5 = false; // flag_5 moving on y-axis?
+            if (!e.m_motion_state.m_is_sliding)
+                e.m_motion_state.m_flag_5 = false; // flag_5 moving on y-axis?
         }
 
         if(e.m_type == EntType::PLAYER)

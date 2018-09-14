@@ -21,4 +21,3 @@ void saveTo(const SequencerList &target, const QString &baseName, bool text_form
 
 
 bool loadFrom(const QString &path, struct SeqType &target);
-

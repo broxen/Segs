@@ -15,6 +15,13 @@
 
 struct AnimTrack;
 
+// WHY, WINDOWS, WHY ?
+#ifdef FAR
+#undef FAR
+#endif
+#ifdef NEAR
+#undef NEAR
+#endif
 enum class SeqBitNames : uint32_t
 {
     SB_INVALID_BIT=0,
@@ -370,7 +377,6 @@ enum class SeqBitNames : uint32_t
     SB_NINE=367,
     SB_TEN=368,
     SB_ZERO=369,
-
     SB_NON_EXISTING=~0U
 };
 
@@ -378,14 +384,14 @@ struct SeqBitSet
 {
     std::bitset<416> bits;
     bool isSet(SeqBitNames v) const { return bits[uint32_t(v)]; }
-    void set(SeqBitNames bit) { bits[uint32_t(bit)] = true; }
+    void set(SeqBitNames bit) { bits[uint32_t(bit)] = true;}
     void setVal(SeqBitNames bit, bool v) { bits[uint32_t(bit)] = v; }
 };
 
-struct Parser_MoveTypeAnim
+struct SeqMoveDataTypeAnim
 {
     QString name;
-    int firstFrame;
+    int firstFrame; // first frame ticks
     int lastFrame; // float ?
 };
 
@@ -396,10 +402,10 @@ struct Parser_PlayFx
     uint32_t flags;
 };
 
-struct Parser_MoveType
+struct SeqMoveTypeData
 {
     QString                            name;
-    std::vector<Parser_MoveTypeAnim *> m_Anim;
+    std::vector<SeqMoveDataTypeAnim *> m_Anim;
     std::vector<Parser_PlayFx *>       m_PlayFx;
     AnimTrack *                        anm_track;
     float                              Scale;
@@ -411,12 +417,12 @@ struct Parser_MoveType
     float                              SmoothSprint;
 };
 
-struct Parser_NextMove
+struct SeqNextMoveData
 {
     QString name;
 };
 
-struct Parser_CycleMove
+struct SeqCycleMoveData
 {
     QString name;
 };
@@ -426,22 +432,20 @@ enum
     MAXMOVES = 0x800
 };
 
-struct Parser_Move_Raw
+struct SeqMoveRawData
 {
     SeqBitSet requires_bits;
-    int16_t * move_idx_entries;
-    int       field_10;
-    int16_t   nextMove[2];
-    int       field_18;
+    std::vector<int16_t> interrupted_by;
+    int16_t   nextMove[4];
     uint8_t   num_nextmoves;
     int16_t   cycleMove[4];
-    char      cycleMoveCnt;
+    uint8_t   cycleMoveCnt;
     SeqBitSet sets_bits;
     SeqBitSet sets_child_bits;
     SeqBitSet sticks_on_child_bits;
 };
 
-struct Parser_Move
+struct SeqMoveData
 {
     QString name;
     float Scale;
@@ -450,16 +454,17 @@ struct Parser_Move
     uint32_t Priority;
     uint32_t Flags;
     int idx;
-    Parser_Move_Raw raw;
-    std::vector<Parser_NextMove*> m_NextMove;
-    std::vector<Parser_CycleMove*> m_CycleMove;
-    std::vector<Parser_MoveType*> m_Type;
+    SeqMoveRawData raw;
+    std::vector<SeqNextMoveData*> m_NextMove;
+    std::vector<SeqCycleMoveData*> m_CycleMove;
+    std::vector<SeqMoveTypeData*> m_Type;
     std::vector<QString > SticksOnChild;
     std::vector<QString > SetsOnChild;
     std::vector<QString > Sets;
     std::vector<QString > Requires;
     std::vector<QString > Member;
     std::vector<QString > Interrupts;
+
     enum eFlags
     {
         Cycle=1,
@@ -480,31 +485,31 @@ struct Parser_Move
     };
 };
 
-struct Parser_GroupName
+struct SeqGroupNameData
 {
     QString name;
 };
 
-struct Parser_SeqTypeDef
+struct SeqTypeDefData
 {
     QString name;
     QString pBaseSkeleton;
     QString pParentType;
 };
 
-struct Parser_Sequencer
+struct SequencerData
 {
     QString name;
-    std::vector<Parser_SeqTypeDef *> m_TypeDef;
-    std::vector<Parser_GroupName *> m_Group;
-    std::vector<Parser_Move *> m_Move;
+    std::vector<SeqTypeDefData *> m_TypeDef;
+    std::vector<SeqGroupNameData *> m_Group;
+    std::vector<SeqMoveData *> m_Move;
     int m_lastChangeDate;
     int initialized=0;
 };
 
 struct SequencerList
 {
-    std::vector<Parser_Sequencer *> sq_list;
+    std::vector<SequencerData *> sq_list;
     int dev_seqInfoCount;
-    QMap<QString,Parser_Sequencer> m_Sequencers; // ordered by sequencer's name ( implemented by 'operator <' )
+    QMap<QString, SequencerData> m_Sequencers; // ordered by sequencer's name ( implemented by 'operator <' )
 };

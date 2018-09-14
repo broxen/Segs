@@ -36,6 +36,7 @@ SEGS_LOGGING_CATEGORY(logEmotes,       "log.emotes")
 SEGS_LOGGING_CATEGORY(logTarget,       "log.target")
 SEGS_LOGGING_CATEGORY(logSpawn,        "log.spawn")
 SEGS_LOGGING_CATEGORY(logMapEvents,    "log.mapevents")
+SEGS_LOGGING_CATEGORY(logMapXfers,     "log.mapxfers")
 SEGS_LOGGING_CATEGORY(logSlashCommand, "log.slashcommand")
 SEGS_LOGGING_CATEGORY(logDescription,  "log.description")
 SEGS_LOGGING_CATEGORY(logFriends,      "log.friends")
@@ -43,6 +44,7 @@ SEGS_LOGGING_CATEGORY(logMiniMap,      "log.minimap")
 SEGS_LOGGING_CATEGORY(logLFG,          "log.lfg")
 SEGS_LOGGING_CATEGORY(logNPCs,         "log.npcs")
 SEGS_LOGGING_CATEGORY(logAnimations,   "log.animations")
+SEGS_LOGGING_CATEGORY(logPowers,       "log.powers")
 
 void setLoggingFilter()
 {
@@ -66,6 +68,7 @@ void setLoggingFilter()
     filter_rules += "\nlog.target="         + config.value("log_target","false").toString();
     filter_rules += "\nlog.spawn="          + config.value("log_spawn","false").toString();
     filter_rules += "\nlog.mapevents="      + config.value("log_mapevents","true").toString();
+    filter_rules += "\nlog.mapxfers="       + config.value("log.mapxfers", "true").toString();
     filter_rules += "\nlog.slashcommand="   + config.value("log_slashcommand","true").toString();
     filter_rules += "\nlog.description="    + config.value("log_description","false").toString();
     filter_rules += "\nlog.friends="        + config.value("log_friends","false").toString();
@@ -73,6 +76,7 @@ void setLoggingFilter()
     filter_rules += "\nlog.lfg="            + config.value("log_lfg","false").toString();
     filter_rules += "\nlog.npcs="           + config.value("log_npcs","false").toString();
     filter_rules += "\nlog.animations="     + config.value("log_animations","false").toString();
+    filter_rules += "\nlog.powers="         + config.value("log_powers","false").toString();
     config.endGroup(); // Logging
 
     QLoggingCategory::setFilterRules(filter_rules);
@@ -119,6 +123,8 @@ void toggleLogging(QString &category)
         cat = &logSpawn();
     else if(category.contains("mapevents",Qt::CaseInsensitive))
         cat = &logMapEvents();
+    else if (category.contains("mapxfers",Qt::CaseInsensitive))
+        cat = &logMapXfers();
     else if(category.contains("slashcommand",Qt::CaseInsensitive))
         cat = &logSlashCommand();
     else if(category.contains("description",Qt::CaseInsensitive))
@@ -133,6 +139,8 @@ void toggleLogging(QString &category)
         cat = &logNPCs();
     else if(category.contains("animations",Qt::CaseInsensitive))
         cat = &logAnimations();
+    else if(category.contains("powers",Qt::CaseInsensitive))
+        cat = &logPowers();
     else
         return;
 
@@ -170,6 +178,7 @@ void dumpLogging()
     output += "\n\t lfg: "          + QString::number(logLFG().isDebugEnabled());
     output += "\n\t npcs: "         + QString::number(logNPCs().isDebugEnabled());
     output += "\n\t animations: "   + QString::number(logAnimations().isDebugEnabled());
+    output += "\n\t powers: "       + QString::number(logPowers().isDebugEnabled());
 
     qDebug().noquote() << output;
 }

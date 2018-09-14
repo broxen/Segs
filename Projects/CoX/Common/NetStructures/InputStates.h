@@ -91,6 +91,7 @@ public:
     bool        m_following             = false;
     glm::vec3   m_pos_start             = {0.0f, 0.0f, 0.0f};
     glm::vec3   m_pos_end               = {0.0f, 0.0f, 0.0f};
+    bool        m_input_received        = false;
 
     // Targeting
     bool        m_has_target;
@@ -99,13 +100,33 @@ public:
 
     TimeState   m_time_state;
 
-    //InputState & operator=(const InputState &other);
+    InputState & operator=(const InputState &other);
+
+    template<class Archive>
+        void serialize(Archive &ar)
+        {
+            ar(m_csc_deltabits);
+            ar(m_control_bits);
+            ar(m_send_id);
+            ar(m_camera_pyr);
+            ar(m_orientation_pyr);
+            ar(m_direction);
+            ar(m_time_diff1);
+            ar(m_time_diff2);
+            ar(m_velocity_scale);
+            ar(m_received_id);
+            ar(m_no_collision);
+            ar(m_pos_delta_valid);
+            ar(m_pyr_valid);
+            ar(m_pos_delta);
+            ar(m_controls_disabled);
+        }
 };
 
 class StateStorage
 {
 public:
-    std::vector<InputState> m_inp_states;
+    QVector<InputState> m_inp_states;
     // TODO: maybe move these other states here and vectorize StateStorage?
     // std::vector<TimeState>  m_time_states;
     // std::vector<SpeedState>  m_speed_states;

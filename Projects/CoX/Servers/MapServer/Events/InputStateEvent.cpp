@@ -22,6 +22,8 @@
 #include <QDebug>
 #include <cmath>
 
+using namespace SEGSEvents;
+
 void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
 {
     uint8_t     control_id;
@@ -39,6 +41,9 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
             ms_since_prev = bs.GetBits(2)+32; // delta from prev event
         else
             ms_since_prev = bs.GetBits(m_next_state.m_csc_deltabits);
+
+        if (control_id < 8)
+                    m_next_state.m_input_received = true;
 
         m_next_state.m_keypress_time[control_id] = ms_since_prev;
 

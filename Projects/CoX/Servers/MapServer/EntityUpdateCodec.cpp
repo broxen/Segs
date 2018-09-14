@@ -17,7 +17,7 @@
 #include "NetStructures/Entity.h"
 #include "NetStructures/StateInterpolator.h"
 #include "MapServer.h"
-#include "MapServerData.h"
+#include "GameData/GameDataStore.h"
 #include "GameData/CoHMath.h"
 #include "DataHelpers.h"
 #include "Logging.h"
