@@ -131,15 +131,25 @@ public:
     void init()
     {
         InputState empty_state;
-        // Fill with two empty states for current() and previous()
-        addNewState(empty_state);
         addNewState(empty_state);
     }
 
     InputState* current() { return &m_inp_states.back(); }
-    InputState* previous() { return &m_inp_states.back()-1; }
     const InputState* current() const { return &m_inp_states.back(); }
-    const InputState* previous() const { return &m_inp_states.back()-1; }
+    InputState* previous()
+    {
+        if(m_inp_states.size() < 2)
+            return &m_inp_states.back();
+
+        return &m_inp_states.back()-1;
+    }
+    const InputState* previous() const
+    {
+        if(m_inp_states.size() < 2)
+            return &m_inp_states.back();
+
+        return &m_inp_states.back()-1;
+    }
 
     void addNewState(InputState &new_state);
 };

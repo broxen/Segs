@@ -42,7 +42,7 @@ void InputStateEvent::receiveControlState(BitStream &bs) // formerly partial_2
             ms_since_prev = bs.GetBits(m_next_state.m_csc_deltabits);
 
         if (control_id < 8)
-                    m_next_state.m_input_received = true;
+            m_next_state.m_input_received = true;
 
         m_next_state.m_ms_since_prev = ms_since_prev;
 
@@ -161,7 +161,7 @@ void InputStateEvent::extended_input(BitStream &bs)
     }
 
     if (m_next_state.m_control_bits != 0)
-            m_next_state.m_input_received = true;
+        m_next_state.m_input_received = true;
 
     if(bs.GetBits(1)) //if ( abs(s_prevTime - ms_time) < 1000 )
     {

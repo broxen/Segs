@@ -166,7 +166,8 @@ void initializeNewPlayerEntity(Entity &e)
 
     e.m_states.init(); // Initialize movement input state pointers
     e.m_states.current()->m_pos_start = e.m_states.current()->m_pos_end = e.m_entity_data.m_pos;
-    e.m_states.previous()->m_pos_start = e.m_states.previous()->m_pos_end = e.m_entity_data.m_pos;
+    e.m_states.current()->m_direction = e.m_direction;
+    e.m_states.current()->m_orientation_pyr = e.m_entity_data.m_orientation_pyr;
 
     PosUpdate p;
     for(int i = 0; i<64; i++)
@@ -213,8 +214,10 @@ void initializeNewNpcEntity(const GameDataStore &data, Entity &e, const Parse_NP
 
     e.m_states.init(); // Initialize movement input state pointers
     e.m_states.current()->m_pos_start = e.m_states.current()->m_pos_end = e.m_entity_data.m_pos;
-    e.m_states.previous()->m_pos_start = e.m_states.previous()->m_pos_end = e.m_entity_data.m_pos;
+    e.m_states.current()->m_direction = e.m_direction;
+    e.m_states.current()->m_orientation_pyr = e.m_entity_data.m_orientation_pyr;
 
+    /*
     PosUpdate p;
     for(int i = 0; i<64; i++)
     {
@@ -226,6 +229,7 @@ void initializeNewNpcEntity(const GameDataStore &data, Entity &e, const Parse_NP
         p.m_timestamp = now_ms;
         addPosUpdate(e, p);
     }
+    */
 }
 
 void markEntityForDbStore(Entity *e, DbStoreFlags f)

@@ -211,7 +211,7 @@ bool World::isPlayerDead(Entity *e)
 
 void World::regenHealthEnd(Entity *e, uint32_t msec)
 {
-    // for now on Players only
+    // for now on Players only, but maybe critters too?
     if(e->m_type == EntType::PLAYER)
     {
         float hp = getHP(*e->m_char);
@@ -226,9 +226,18 @@ void World::regenHealthEnd(Entity *e, uint32_t msec)
 
 void World::updateEntity(Entity *e, const ACE_Time_Value &dT)
 {
-    physicsStep(e, dT.msec());
     effectsStep(e, dT.msec());
+
+    // physics and power timers only apply to players and critters
+    if(e->m_type != EntType::PLAYER && e->m_type != EntType::CRITTER)
+        return;
+
+    physicsStep(e, dT.msec());
     checkPowerTimers(e, dT.msec());
+
+    // the rest is for players only.
+    if(e->m_type != EntType::PLAYER)
+        return;
 
     // check death, set clienstate if dead, and
     // if alive, recover endurance and health

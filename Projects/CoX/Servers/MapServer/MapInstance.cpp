@@ -887,7 +887,7 @@ void MapInstance::on_scene_request(SceneRequest *ev)
     res->undos_PP              = 0;
     res->is_new_world          = true;
     res->m_outdoor_mission_map = false;
-    res->m_map_number          = 1;
+    res->m_map_number          = 1;     // TODO: this should be map_idx, no?
 
     assert(m_data_path.contains('_'));
     int city_idx = m_data_path.indexOf('/') + 1;
@@ -2293,7 +2293,7 @@ glm::vec3 MapInstance::closest_safe_location(glm::vec3 v) const
     Q_UNUSED(v);
     if(!m_new_player_spawns.empty())
     {
-        return m_new_player_spawns.front()[3];
+        return glm::vec3(m_new_player_spawns[rand()%m_new_player_spawns.size()][3]);
     }
     return glm::vec3(0,0,0);
 }
@@ -2502,8 +2502,8 @@ void MapInstance::on_afk_update()
 
             if (cd->m_afk)
                 toggleAFK(*e->m_char, false);
-            cd->m_is_on_auto_logout = false;
 
+            cd->m_is_on_auto_logout = false;
             e->m_has_input_on_timeframe = false;
         }
 
