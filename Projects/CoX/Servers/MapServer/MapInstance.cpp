@@ -721,7 +721,8 @@ void MapInstance::on_expect_client( ExpectMapClientRequest *ev )
     serializeFromQString(char_data,request_data.char_from_db_data);
     // existing character
     Entity *ent = m_entities.CreatePlayer();
-    toActualCharacter(char_data, *ent->m_char,*ent->m_player, *ent->m_entity);
+    toActualCharacter(char_data, *ent->m_char, *ent->m_player, *ent->m_entity);
+    ent->m_char->finalizeLevel(); // done here to fix spawn with 0 hp/end bug
     ent->fillFromCharacter(getGameData());
     ent->m_client = &map_session;
     map_session.m_ent = ent;
@@ -1979,6 +1980,10 @@ void MapInstance::on_client_resumed(ClientResumedRendering *ev)
         session.m_in_map = true;
     if (!map_server->session_has_xfer_in_progress(session.link()->session_token()))
     {
+        // Force position and orientation to fix #617 spawn at 0,0,0 bug
+        forcePosition(*session.m_ent, session.m_ent->m_entity_data.m_pos);
+        forceOrientation(*session.m_ent, session.m_ent->m_entity_data.m_orientation_pyr);
+
         char buf[256];
         std::string welcome_msg = std::string("Welcome to SEGS ") + VersionInfo::getAuthVersion()+"\n";
         std::snprintf(buf, 256, "There are %zu active entities and %zu clients", m_entities.active_entities(),
@@ -2000,7 +2005,8 @@ void MapInstance::on_location_visited(LocationVisited *ev)
 {
     MapClientSession &session(m_session_store.session_from_event(ev));
     qCDebug(logMapEvents) << "Attempting a call to script location_visited with:"<<ev->m_name<<qHash(ev->m_name);
-    auto val = m_scripting_interface->callFuncWithClientContext(&session,"location_visited",qHash(ev->m_name));
+
+    auto val = m_scripting_interface->callFuncWithClientContext(&session,"location_visited",qHash(ev->m_name), ev->m_pos);
     sendInfoMessage(MessageChannel::DEBUG_INFO,QString::fromStdString(val),session);
 
     qCWarning(logMapEvents) << "Unhandled location visited event:" << ev->m_name <<
@@ -2011,7 +2017,8 @@ void MapInstance::on_plaque_visited(PlaqueVisited * ev)
 {
     MapClientSession &session(m_session_store.session_from_event(ev));
     qCDebug(logMapEvents) << "Attempting a call to script plaque_visited with:"<<ev->m_name<<qHash(ev->m_name);
-    auto val = m_scripting_interface->callFuncWithClientContext(&session,"plaque_visited",qHash(ev->m_name));
+
+    auto val = m_scripting_interface->callFuncWithClientContext(&session,"plaque_visited",qHash(ev->m_name), ev->m_pos);
     qCWarning(logMapEvents) << "Unhandled plaque visited event:" << ev->m_name <<
                   QString("(%1,%2,%3)").arg(ev->m_pos.x).arg(ev->m_pos.y).arg(ev->m_pos.z);
 }
