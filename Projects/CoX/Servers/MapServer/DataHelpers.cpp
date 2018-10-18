@@ -1041,7 +1041,7 @@ void addNpc(MapClientSession &cl, const char* name, glm::vec3 *loc, int variatio
     Entity *e = cl.m_current_map->m_entities.CreateNpc(getGameData(),*npc_def,idx, variation);
 
     forcePosition(*e, *loc);
-    e->m_velocity = {0,0,0};
+    e->m_motion_state.m_velocity = {0,0,0};
     sendInfoMessage(MessageChannel::DEBUG_INFO, QString("Created npc with ent idx:%1 at location x: %2 y: %3 z: %4").arg(e->m_idx).arg(loc->x).arg(loc->y).arg(loc->z), cl);
 }
 
