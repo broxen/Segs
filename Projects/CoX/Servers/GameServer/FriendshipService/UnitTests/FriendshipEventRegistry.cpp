@@ -9,6 +9,7 @@ namespace
     const char *event_names[] =
     {
         "FriendConnectedMessage",
+        "FriendDisconnectedMessage",
         "SendFriendListMessage",
         "SendNotifyFriendMessage",
         "FriendAddedMessage",

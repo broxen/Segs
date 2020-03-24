@@ -17,6 +17,8 @@
 #include "serialization_types.h"
 #include "GameData/playerdata_definitions.h"
 #include "GameData/map_definitions.h"
+#include "Common/Servers/HandlerLocator.h"
+#include "Messages/FriendshipService/FriendHandlerEvents.h"
 #include "Entity.h"
 #include "Logging.h"
 #include "Character.h"
@@ -65,9 +67,8 @@ void dumpFriendsList(const Friend &f)
              << "\n\t" << "mapname:" << f.m_mapname;
 }
 
-FriendListChangeStatus addFriend(Entity &src, const Entity &tgt,const QString &mapname)
+FriendListChangeStatus addFriend(Entity &src, const Entity &tgt, const QString &mapname)
 {
-    QString msg;
     FriendsList &src_data(src.m_char->m_char_data.m_friendlist);
 
     if(src_data.m_friends_count >= g_max_friends)
@@ -93,27 +94,37 @@ FriendListChangeStatus addFriend(Entity &src, const Entity &tgt,const QString &m
 
     if(logFriends().isDebugEnabled())
         dumpFriends(src);
+
+    EventProcessor *friend_tgt = HandlerLocator::getFriend_Handler();
+        friend_tgt->putq(new SEGSEvents::FriendAddedMessage({src.m_char->m_db_id, tgt.m_db_id, f},0));
+
     return FriendListChangeStatus::FRIEND_ADDED;
 }
 
-FriendListChangeStatus removeFriend(Entity &src, const QString& friend_name)
+FriendListChangeStatus removeFriend(Entity &src, const QString &friend_name)
 {
-    QString msg;
+    uint32_t m_tgt_id;
     FriendsList &src_data(src.m_char->m_char_data.m_friendlist);
 
     qCDebug(logFriends) << "Searching for friend" << friend_name << "to remove them.";
 
     QString lower_name = friend_name.toLower();
     auto iter = std::find_if( src_data.m_friends.begin(), src_data.m_friends.end(),
-                              [lower_name](const Friend& f)->bool {return lower_name==f.m_name.toLower();});
+                              [lower_name](const Friend &f)->bool { return lower_name==f.m_name.toLower(); });
 
     if(iter==src_data.m_friends.end())
+    {
+        qCDebug(logFriends) << friend_name + " is not on your friends list.";
         return FriendListChangeStatus::FRIEND_NOT_FOUND;
+    }
 
-    msg = "Removing " + iter->m_name + " from your friends list.";
+    m_tgt_id = iter->m_db_id;
     iter = src_data.m_friends.erase(iter);
 
-    qCDebug(logFriends) << msg;
+    EventProcessor *friend_tgt = HandlerLocator::getFriend_Handler();
+        friend_tgt->putq(new SEGSEvents::FriendRemovedMessage({src.m_char->m_db_id, m_tgt_id},0));
+
+    qCDebug(logFriends) << "Removing " + iter->m_name + " from your friends list.";
     if(logFriends().isDebugEnabled())
         dumpFriends(src);
 
@@ -122,15 +133,18 @@ FriendListChangeStatus removeFriend(Entity &src, const QString& friend_name)
 
     src_data.m_friends_count = src_data.m_friends.size();
 
-    qCDebug(logFriends).noquote() << msg;
     return FriendListChangeStatus::FRIEND_REMOVED;
 }
 
 //const QString &getFriendDisplayMapName(const Friend &f)
 //{
+//    EventProcessor *friend_tgt = HandlerLocator::getFriend_Handler();
+//    friend_tgt->putq(new SEGSEvents::FriendUpdateMessage({src.m_char->m_db_id, tgt.m_db_id, f},0));
+
 //    static const QString offline(QStringLiteral("OFFLINE"));
 //    if(!f.m_online_status)
 //        return offline;
+
 //    return getDisplayMapName(f.m_map_idx);
 //}
 

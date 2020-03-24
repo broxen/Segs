@@ -18,6 +18,7 @@
 namespace SEGSEvents
 {
 struct FriendConnectedMessage;
+struct FriendDisconnectedMessage;
 struct FriendAddedMessage;
 struct FriendRemovedMessage;
 } // end of namespace SEGSEvents
@@ -36,6 +37,7 @@ struct PlayerInfo
     MapInfo m_map_info;
     bool m_is_online;
 };
+
 struct FriendHandlerState
 {
     //Key is db ID of char, value is everything associated

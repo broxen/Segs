@@ -10,11 +10,14 @@
 #include "Servers/InternalEvents.h"
 #include "GameData/Friend.h"
 #include "GameData/chardata_serializers.h"
+
 namespace SEGSEvents
 {
+
 enum FriendHandlerEventTypes : uint32_t
 {
     evFriendConnectedMessage = Internal_EventTypes::ID_LAST_Internal_EventTypes,
+    evFriendDisconnectedMessage,
     evSendFriendListMessage,
     evSendNotifyFriendMessage,
     evFriendAddedMessage,
@@ -37,6 +40,20 @@ struct FriendConnectedData
 
 //[[ev_def:macro]]
 ONE_WAY_MESSAGE(FriendHandlerEventTypes,FriendConnected)
+
+struct FriendDisconnectedData
+{
+    uint32_t m_char_db_id;       // id of the character connecting
+
+    template<class Archive>
+    void serialize(Archive &ar)
+    {
+        ar(m_char_db_id);
+    }
+};
+
+//[[ev_def:macro]]
+ONE_WAY_MESSAGE(FriendHandlerEventTypes,FriendDisconnected)
 
 struct SendFriendListData
 {
@@ -69,7 +86,7 @@ ONE_WAY_MESSAGE(FriendHandlerEventTypes,SendNotifyFriend)
 
 struct FriendAddedData
 {
-    uint32_t m_char_db_id;         //character who added a new friend
+    uint32_t m_char_db_id;      //character who added a new friend
     uint32_t m_added_id;        //id of player added
     Friend m_friend;
     template<class Archive>
@@ -84,7 +101,7 @@ ONE_WAY_MESSAGE(FriendHandlerEventTypes,FriendAdded)
 
 struct FriendRemovedData
 {
-    uint32_t m_char_db_id;         //character who removed a friend
+    uint32_t m_char_db_id;      //character who removed a friend
     uint32_t m_removed_id;      //id of player removed
     template<class Archive>
     void serialize(Archive &ar)
@@ -95,4 +112,5 @@ struct FriendRemovedData
 
 //[[ev_def:macro]]
 ONE_WAY_MESSAGE(FriendHandlerEventTypes,FriendRemoved)
+
 } // end of namespace SEGSEvents

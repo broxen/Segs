@@ -114,6 +114,8 @@ class ReceiveTaskDetailRequest;
 class SouvenirDetailRequest;
 class StoreSellItem;
 class StoreBuyItem;
+class SendFriendListMessage;
+class SendNotifyFriendMessage;
 
 // server<-> server event types
 struct ExpectMapClientRequest;
@@ -302,4 +304,6 @@ protected:
         void on_souvenir_detail_request(SEGSEvents::SouvenirDetailRequest* ev);
         void on_store_sell_item(SEGSEvents::StoreSellItem* ev);
         void on_store_buy_item(SEGSEvents::StoreBuyItem* ev);
+        void on_update_friendslist(SEGSEvents::SendFriendListMessage *ev);
+        void on_notify_friend(SEGSEvents::SendNotifyFriendMessage *ev);
 };

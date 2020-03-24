@@ -79,7 +79,7 @@ void refresh_player_friends(FriendHandlerState &state,uint32_t char_db_id)
  * db id, and map instance information and store it.  We also notify other players
  * who may have added this client that they are now online.
  */
-void on_client_connected(FriendHandlerState &state,FriendConnectedMessage *msg)
+void on_client_connected(FriendHandlerState &state, FriendConnectedMessage *msg)
 {
     //A player has connected, we need to notify all the people that have added this character as a friend
     uint32_t &char_db_id = msg->m_data.m_char_db_id;
@@ -111,14 +111,14 @@ void on_client_connected(FriendHandlerState &state,FriendConnectedMessage *msg)
         }
     }
 
-    update_player_friends(state,char_db_id, msg->m_data.m_friends_list);
+    update_player_friends(state, char_db_id, msg->m_data.m_friends_list);
 }
 
 /*
  * When a client disconnects, update their online status and
  * update lists for the friends that added this player.
  */
-void on_client_disconnected(FriendHandlerState &state,ClientDisconnectedMessage *msg)
+void on_client_disconnected(FriendHandlerState &state, FriendDisconnectedMessage *msg)
 {
     uint32_t char_db_id = msg->m_data.m_char_db_id;
     state.m_player_info_map[char_db_id].m_is_online = false;
@@ -175,8 +175,8 @@ void FriendHandler::dispatch(SEGSEvents::Event *ev)
         case evFriendConnectedMessage:
             on_client_connected(m_state,static_cast<FriendConnectedMessage *>(ev));
             break;
-        case evClientDisconnectedMessage:
-            on_client_disconnected(m_state,static_cast<ClientDisconnectedMessage *>(ev));
+        case evFriendDisconnectedMessage:
+            on_client_disconnected(m_state,static_cast<FriendDisconnectedMessage *>(ev));
             break;
         case evFriendAddedMessage:
             on_friend_added(m_state,static_cast<FriendAddedMessage *>(ev));
@@ -206,7 +206,7 @@ FriendHandler::FriendHandler(int for_game_server_id) : m_message_bus_endpoint(*t
     assert(HandlerLocator::getFriend_Handler() == nullptr);
     HandlerLocator::setFriend_Handler(this);
 
-    m_message_bus_endpoint.subscribe(evClientDisconnectedMessage);
+    m_message_bus_endpoint.subscribe(evFriendDisconnectedMessage);
 }
 
 FriendHandler::~FriendHandler()
