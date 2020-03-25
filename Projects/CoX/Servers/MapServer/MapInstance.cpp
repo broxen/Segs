@@ -3326,22 +3326,21 @@ void MapInstance::clearLuaTimer(uint32_t entity_idx)
 
 void MapInstance::on_update_friendslist(SendFriendListMessage *ev)
 {
-    MapClientSession &map_session(m_session_store.session_from_token(ev->m_data.m_session_token));
-    Entity * e = map_session.m_ent;
+    MapClientSession& session(m_session_store.session_from_token(ev->m_data.m_session_token));
     FriendsList flist = ev->m_data.m_friendlist;
-    e->m_char->m_char_data.m_friendlist = flist;
-    sendFriendsListUpdate(e,flist);
+    session.m_ent->m_char->m_char_data.m_friendlist = flist;
+    sendFriendsListUpdate(session, flist);
 }
 
 void MapInstance::on_notify_friend(SendNotifyFriendMessage *ev)
 {
     //Get the session we want to notify, and the session of who connected (so we can get the name)
-    MapClientSession &notify_session(m_session_store.session_from_token(ev->m_data.m_notify_token));
-    MapClientSession &connected_session(m_session_store.session_from_token(ev->m_data.m_connected_token));
-    Entity * e = connected_session.m_ent;
+    MapClientSession& notify_session(m_session_store.session_from_token(ev->m_data.m_notify_token));
+    MapClientSession& connected_session(m_session_store.session_from_token(ev->m_data.m_connected_token));
+    Entity *e = connected_session.m_ent;
 
     QString notify_msg = "Your friend " + e->m_char->getName() + " is now online.";
-    sendInfoMessage(MessageChannel::SERVER,notify_msg,notify_session);
+    sendInfoMessage(MessageChannel::SERVER, notify_msg, notify_session);
 }
 
 

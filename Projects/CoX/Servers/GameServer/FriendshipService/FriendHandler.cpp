@@ -173,16 +173,16 @@ void FriendHandler::dispatch(SEGSEvents::Event *ev)
     switch(ev->type())
     {
         case evFriendConnectedMessage:
-            on_client_connected(m_state,static_cast<FriendConnectedMessage *>(ev));
+            on_client_connected(m_state, static_cast<FriendConnectedMessage *>(ev));
             break;
         case evFriendDisconnectedMessage:
-            on_client_disconnected(m_state,static_cast<FriendDisconnectedMessage *>(ev));
+            on_client_disconnected(m_state, static_cast<FriendDisconnectedMessage *>(ev));
             break;
         case evFriendAddedMessage:
-            on_friend_added(m_state,static_cast<FriendAddedMessage *>(ev));
+            on_friend_added(m_state, static_cast<FriendAddedMessage *>(ev));
             break;
         case evFriendRemovedMessage:
-            on_friend_removed(m_state,static_cast<FriendRemovedMessage *>(ev));
+            on_friend_removed(m_state, static_cast<FriendRemovedMessage *>(ev));
             break;
         default:
             break;

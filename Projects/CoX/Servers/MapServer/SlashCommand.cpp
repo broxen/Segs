@@ -1798,11 +1798,9 @@ void cmdHandler_Friend(const QStringList &params, MapClientSession &sess)
 {
     const Entity* tgt = getEntityFromName(params.join(" "), sess);
     if(tgt == nullptr || sess.m_ent->m_char->isEmpty() || tgt->m_char->isEmpty())
-    {
         return;
-    }
 
-    FriendListChangeStatus status = addFriend(*sess.m_ent, *tgt,getEntityDisplayMapName(tgt->m_entity_data));
+    FriendListChangeStatus status = addFriend(*sess.m_ent, *tgt, getEntityDisplayMapName(tgt->m_entity_data));
     if(status==FriendListChangeStatus::MAX_FRIENDS_REACHED)
     {
         QString msg = "You cannot have more than " + QString::number(g_max_friends) + " friends.";
