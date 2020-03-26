@@ -16,7 +16,7 @@ namespace SEGSEvents
 
 enum FriendHandlerEventTypes : uint32_t
 {
-    evFriendConnectedMessage = Internal_EventTypes::ID_LAST_Internal_EventTypes+101,
+    evFriendConnectedMessage = Internal_EventTypes::ID_LAST_Internal_EventTypes,
     evFriendDisconnectedMessage,
     evSendFriendListMessage,
     evSendNotifyFriendMessage,
