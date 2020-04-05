@@ -6,7 +6,7 @@
  */
 
 /*!
- * @addtogroup NetStructures Projects/CoX/Common/NetStructures
+ * @addtogroup GameData Projects/CoX/Common/GameData
  * @{
  */
 
@@ -543,6 +543,7 @@ void fillEntityFromNewCharData(Entity &e, BitStream &src,const GameDataStore &da
     e.m_entity_data.m_class_idx = getEntityClassIndex(data,true, getClass(*e.m_char));
     e.m_player->m_keybinds.resetKeybinds(data.m_keybind_profiles);
     e.m_is_hero = true;
+    e.m_char->m_char_data.m_supergroup.m_sg_costume = *e.m_char->getCurrentCostume();
 
     e.m_direction = glm::quat(1.0f,0.0f,0.0f,0.0f);
 }

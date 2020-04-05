@@ -33,8 +33,6 @@ void CharacterData::serialize(Archive &archive, uint32_t const version)
     archive(cereal::make_nvp("LastOnline",m_last_online));
     archive(cereal::make_nvp("Class",m_class_name));
     archive(cereal::make_nvp("Origin",m_origin_name));
-    archive(cereal::make_nvp("SuperGroupCostume",m_has_sg_costume));
-    archive(cereal::make_nvp("UsingSGCostume",m_using_sg_costume));
     archive(cereal::make_nvp("SideKick",m_sidekick));
     archive(cereal::make_nvp("FriendList",m_friendlist));
     archive(cereal::make_nvp("CurrentAttribs", m_current_attribs));

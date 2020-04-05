@@ -36,10 +36,6 @@ Character::Character()
 {
     m_add_new_costume                       = true;
     m_char_data.m_current_costume_idx       = 0;
-    m_char_data.m_has_sg_costume            = false;
-    m_char_data.m_using_sg_costume          = false;
-    m_sg_costume                            = nullptr;
-
     m_char_data.m_has_titles = m_char_data.m_has_the_prefix
             || !m_char_data.m_titles[0].isEmpty()
             || !m_char_data.m_titles[1].isEmpty()
@@ -62,14 +58,11 @@ void Character::reset()
     m_char_data.m_combat_level              = m_char_data.m_level;
     m_char_data.m_class_name                = EMPTY_STRING;
     m_char_data.m_origin_name               = EMPTY_STRING;
-    m_char_data.m_has_sg_costume            = false;
     m_char_data.m_current_costume_idx       = 0;
-    m_char_data.m_using_sg_costume          = false;
     m_char_data.m_has_titles                = false;
     m_char_data.m_sidekick.m_has_sidekick   = false;
     m_char_data.m_powersets.clear();
     m_add_new_costume                       = true;
-    m_sg_costume                            = nullptr;
 }
 
 
@@ -347,6 +340,14 @@ const Costume * Character::getCurrentCostume() const
     return &m_costumes.front();
 }
 
+const Costume * Character::getSGCostume() const
+{
+    if(m_char_data.m_supergroup.m_sg_costume.m_parts.empty())
+        return getCurrentCostume();
+
+    return &m_char_data.m_supergroup.m_sg_costume;
+}
+
 const vCostumes * Character::getAllCostumes() const
 {
     assert(!m_costumes.empty()); // should always have 1 costume
@@ -397,16 +398,16 @@ void Character::serialize_costumes(BitStream &bs, const ColorAndPartPacker *pack
         }
         else
             ::serializeto(m_costumes[getCurrentCostumeIdx(*this)],bs,packer);
-
-        bs.StoreBits(1, m_char_data.m_has_sg_costume);
-        if(m_char_data.m_has_sg_costume)
-        {
-            ::serializeto(*m_sg_costume,bs,packer);
-            bs.StoreBits(1, m_char_data.m_using_sg_costume);
-        }
     }
     else // other player's costumes we're sending only their current.
         ::serializeto(*getCurrentCostume(),bs,packer);
+
+    bs.StoreBits(1, m_char_data.m_supergroup.m_has_sg_costume);
+    if(m_char_data.m_supergroup.m_has_sg_costume)
+    {
+        ::serializeto(*getSGCostume(), bs, packer);
+        bs.StoreBits(1, m_char_data.m_supergroup.m_sg_mode);
+    }
 }
 
 void Character::dumpSidekickInfo()

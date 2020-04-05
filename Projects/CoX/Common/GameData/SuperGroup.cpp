@@ -6,18 +6,19 @@
  */
 
 /*!
- * @addtogroup NetStructures Projects/CoX/Common/NetStructures
+ * @addtogroup GameData Projects/CoX/Common/GameData
  * @{
  */
 
 #include "SuperGroup.h"
 
-#include "Servers/MapServer/DataHelpers.h"
-#include "Messages/Map/MessageChannels.h"
+#include "Character.h"
 #include "Entity.h"
 #include "EntityHelpers.h"
-#include "Character.h"
 #include "Logging.h"
+#include "Messages/Map/MessageChannels.h"
+#include "Servers/MapServer/DataHelpers.h"
+#include "SuperGroupStats.h"
 #include "TimeHelpers.h"
 
 #include "serialization_common.h"
@@ -53,34 +54,6 @@ void SuperGroupData::serialize(Archive &archive, uint32_t const version)
 CEREAL_CLASS_VERSION(SuperGroupData, SuperGroupData::class_version) // register SuperGroupData class version
 SPECIALIZE_CLASS_VERSIONED_SERIALIZATIONS(SuperGroupData)
 
-template<class Archive>
-void SuperGroupStats::serialize(Archive &archive, uint32_t const version)
-{
-    if(version != SuperGroupStats::class_version)
-    {
-        qCritical() << "Failed to serialize SuperGroupStats, incompatible serialization format version " << version;
-        return;
-    }
-
-    archive(cereal::make_nvp("SgHasSuperGroup", m_has_supergroup));
-    archive(cereal::make_nvp("SgDbId", m_sg_db_id));
-    archive(cereal::make_nvp("SgRank", m_rank));
-    archive(cereal::make_nvp("SgHasCostume", m_has_sg_costume));
-    archive(cereal::make_nvp("SgMode", m_sg_mode));
-    archive(cereal::make_nvp("SgCostume", m_sg_costume));
-    archive(cereal::make_nvp("SgMemberDbId", m_member_db_id));
-    archive(cereal::make_nvp("SgDateJoined", m_date_joined));
-    archive(cereal::make_nvp("SgHoursLogged", m_hours_logged));
-    archive(cereal::make_nvp("SgLastOnline", m_last_online));
-    archive(cereal::make_nvp("SgIsOnline", m_is_online));
-    archive(cereal::make_nvp("SgMemberName", m_name));
-    archive(cereal::make_nvp("SgName", m_sg_name));
-    archive(cereal::make_nvp("SgOriginIcon", m_origin_icon));
-    archive(cereal::make_nvp("SgClassIcon", m_class_icon));
-}
-
-CEREAL_CLASS_VERSION(SuperGroupStats, SuperGroupStats::class_version) // register SuperGroupData class version
-SPECIALIZE_CLASS_VERSIONED_SERIALIZATIONS(SuperGroupStats)
 
 /*
  * SG Methods
@@ -299,8 +272,8 @@ bool toggleSGMode(Entity &e)
         return false;
     }
 
-    qCDebug(logSuperGroups) << "Toggling SG Mode to" << cd->m_supergroup.m_sg_mode;
     cd->m_supergroup.m_sg_mode = !cd->m_supergroup.m_sg_mode;
+    qCDebug(logSuperGroups) << "Toggling SG Mode to" << cd->m_supergroup.m_sg_mode;
 
     return cd->m_supergroup.m_sg_mode;
 }
@@ -466,12 +439,14 @@ void addSuperGroup(Entity &e, SuperGroupData &data)
     if(logSuperGroups().isDebugEnabled())
         g_all_supergroups.back().dump();
 
+    // New SuperGroup, build new costume from current costume
+    // TODO: createSGCostume(e, data);
+    //cd->m_supergroup.m_sg_costume       = *e.m_char->getCurrentCostume();
     cd->m_supergroup.m_sg_db_id         = sg.m_sg_db_id;
     cd->m_supergroup.m_has_supergroup   = true;
     cd->m_supergroup.m_rank             = SGRanks::Leader; // first member should be leader
     cd->m_supergroup.m_has_sg_costume   = true;
-    cd->m_supergroup.m_sg_mode          = true;
-    cd->m_supergroup.m_sg_costume       = *e.m_char->getCurrentCostume();
+    cd->m_supergroup.m_sg_mode          = false;
     cd->m_supergroup.m_sg_costume.m_send_full_costume = true;
 
     markEntityForUpdate(&e, EntityUpdateFlags::Costumes);
@@ -489,7 +464,14 @@ void removeSuperGroup(uint32_t sg_db_id)
 bool isSuperGroupValid(SuperGroupData &data)
 {
     // Check to ensure name isn't already in use or restricted
+    // if(isSGNameTaken(data.m_sg_name)) return false;
+
     // Check to ensure titles aren't restricted (foul language, etc)
+    // if(areSGTitlesInvalid(data.m_sg_titles)) return false;
+
+    // Is registrant level 10+?
+    // if(getLevel(ent) < 10) return false;
+
     // For now let's simply provide a means for testing
     if(data.m_sg_name.contains("Success", Qt::CaseInsensitive))
         return true;
@@ -497,27 +479,55 @@ bool isSuperGroupValid(SuperGroupData &data)
     return false;
 }
 
-/*
- * SuperGroupStats
- */
-SuperGroup* SuperGroupStats::getSuperGroup()
+void setSGCostumeColors(Costume &costume, uint32_t colors[])
 {
-    if(m_has_supergroup && m_sg_db_id != 0)
-        return getSuperGroupByIdx(m_sg_db_id);
-
-    return nullptr;
+    // TODO: are colors supposed to alternate primary and secondary?
+    for(auto &part : costume.m_parts)
+    {
+        part.m_colors[0] = colors[0];
+        part.m_colors[1] = colors[1];
+    }
 }
 
-void SuperGroupStats::dump()
+void createSGCostume(Entity &e, SuperGroupData &data)
 {
-    QString msg = QString("SuperGroup Info\n  has_supergroup: %1 \n  db_id: %2 \n  rank: %3 ")
-            .arg(m_has_supergroup)
-            .arg(m_sg_db_id)
-            .arg(static_cast<uint32_t>(m_rank));
+    SuperGroupStats *sgs = &e.m_char->m_char_data.m_supergroup;
 
-    qDebug().noquote() << msg;
+    if(!sgs->m_has_sg_costume)
+        return;
+
+    // set SG Costume to current costume
+    sgs->m_sg_costume = *e.m_char->getCurrentCostume();
+
+    // if Emblem is set, change it and change costume top if necessary
+    if(!data.m_sg_emblem.isEmpty())
+    {
+        // We can't be sure that these parts will always be at the same idx.
+        // Get idx of "Chest" and "ChestDetail" in parts array
+        uint32_t chest_idx = distance(sgs->m_sg_costume.m_parts.begin(), std::find_if(
+                                        sgs->m_sg_costume.m_parts.begin(),
+                                        sgs->m_sg_costume.m_parts.end(),
+                                        [] (const CostumePart& cp) { return cp.m_type == uint8_t(CostumePartType::Chest); }));
+        uint32_t chest_detail_idx = distance(sgs->m_sg_costume.m_parts.begin(), std::find_if(
+                                        sgs->m_sg_costume.m_parts.begin(),
+                                        sgs->m_sg_costume.m_parts.end(),
+                                        [] (const CostumePart& cp) { return cp.m_type == uint8_t(CostumePartType::ChestDetail); }));
+
+        // CoX could only do chest emblems on some peices, let's single those out here
+        static const QStringList ok_chest_pieces = { "tight", "jacket", "baggy", "armored"};
+
+        // if chest piece isn't on of the ok types, then change it to "tight"
+        if(!ok_chest_pieces.contains(sgs->m_sg_costume.m_parts[chest_idx].m_geometry, Qt::CaseInsensitive))
+            sgs->m_sg_costume.m_parts[chest_detail_idx].m_geometry = "tight";
+
+        // set textures
+        sgs->m_sg_costume.m_parts[chest_detail_idx].m_texture_1 = "base";
+        sgs->m_sg_costume.m_parts[chest_detail_idx].m_texture_2 = qPrintable(data.m_sg_emblem);
+    }
+
+    // set SG Colors
+    setSGCostumeColors(sgs->m_sg_costume, data.m_sg_colors);
 }
-
 
 /*
  * Mark for db update

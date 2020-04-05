@@ -111,7 +111,7 @@ public:
     void    serializeto(BitStream &bs) const override
     {
         bs.StorePackedBits(1,type()-MapEventTypes::evFirstServerToClient); // packet 74
-        bs.StoreString(m_unknown); // unknown, possibly unused
+        bs.StoreString(m_unknown); // unknown, possibly the name of the npc as a callback
         qCDebug(logSuperGroups) << "RegisterSuperGroup:" << m_unknown;
     }
 

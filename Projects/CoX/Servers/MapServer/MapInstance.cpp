@@ -2921,13 +2921,11 @@ void MapInstance::on_create_supergroup(CreateSuperGroup *ev)
     // check if SuperGroup data is valid
     bool sg_is_valid = isSuperGroupValid(ev->data);
 
-    // need to have a costume to send for response
     Costume costume = *session.m_ent->m_char->getCurrentCostume();
-    qCDebug(logSuperGroups) << "SG Costume Parts" << costume.m_parts.size();
-
     // if sg is invalid (invalid name, etc) send response and return
     if(!sg_is_valid)
     {
+        // costume isn't really needed here, but I can't seem to overload the GameCommand
         session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
         return;
     }
@@ -2939,6 +2937,7 @@ void MapInstance::on_create_supergroup(CreateSuperGroup *ev)
     if(!sgs->m_has_supergroup && !sgs->m_has_sg_costume)
         return;
 
+    costume = *session.m_ent->m_char->getSGCostume();
     session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
 
 //    // Finally, create SG in Database
@@ -2958,7 +2957,8 @@ void MapInstance::on_change_supergroup_colors(ChangeSuperGroupColors *ev)
                           << ev->m_sg_colors[0]
                           << ev->m_sg_colors[1];
 
-    //changeSGColors(ev->m_sg_name, ev->m_sg_titles, ev->m_sg_emblem, ev->m_sg_colors);
+    Costume costume = *session.m_ent->m_char->m_char_data.m_supergroup.m_sg_costume;
+    setSGCostumeColors(costume, ev->m_sg_colors);
 }
 
 void MapInstance::on_accept_supergroup_changes(AcceptSuperGroupChanges *ev)
@@ -2966,7 +2966,21 @@ void MapInstance::on_accept_supergroup_changes(AcceptSuperGroupChanges *ev)
     MapClientSession &session(m_session_store.session_from_event(ev));
     qCDebug(logMapEvents) << "Entity: " << session.m_ent->m_idx << "has received SuperGroup Settings Accept Changes";
 
-    //makeSGChanges();
+    // check if SuperGroup data is still valid
+    bool sg_is_valid = isSuperGroupValid(ev->data);
+
+    Costume costume = *session.m_ent->m_char->getCurrentCostume();
+    // if sg is invalid (invalid name, etc) send response and return
+    if(!sg_is_valid)
+    {
+        // costume isn't really needed here, but I can't seem to overload the GameCommand
+        session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
+        return;
+    }
+
+    //makeSGChanges(ev);
+    costume = *session.m_ent->m_char->getSGCostume();
+    session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
 }
 
 void MapInstance::on_supergroup_mode(SuperGroupMode *ev)

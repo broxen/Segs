@@ -11,6 +11,7 @@
 #include "Common/GameData/Powers.h"
 #include "Common/GameData/Sidekick.h"
 #include "Common/GameData/SuperGroup.h"
+#include "Common/GameData/SuperGroupStats.h"
 
 #include <QString>
 #include <stdint.h>
@@ -54,8 +55,6 @@ struct CharacterData
         bool        m_has_the_prefix    = false;
         bool        m_afk               = false;
         bool        m_lfg               = false;
-        bool        m_has_sg_costume;           // player has a supergroup costume
-        bool        m_using_sg_costume;         // player uses sg costume currently
         bool        m_is_on_task_force  = false;
         bool        m_is_on_auto_logout = false;
         // No need to serialize these members

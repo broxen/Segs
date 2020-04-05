@@ -16,26 +16,27 @@
 
 extern int g_max_num_costume_slots;
 
+enum class CostumePartType {
+    Pants = 0,
+    Chest,
+    Head,
+    Gloves,
+    Boots,
+    Belt,
+    Hair,
+    Face,
+    EyeDetail,
+    ChestDetail,
+    Shoulders,
+    Back,
+    WepR,
+    Neck,
+    UarmR,
+};
+
 struct CostumePart
 {
     enum : uint32_t {class_version = 1};
-    enum class Type {
-        Pants=0,
-        Chest,
-        Head,
-        Gloves,
-        Boots,
-        Belt,
-        Hair,
-        Face,
-        EyeDetail,
-        ChestDetail,
-        Shoulders,
-        Back,
-        WepR,
-        Neck,
-        UarmR,
-    };
     QString m_geometry;
     QString m_texture_1;
     QString m_texture_2;
@@ -43,7 +44,7 @@ struct CostumePart
     QString name_4;
     QString name_5;
     uint32_t m_colors[2] = {0};
-    uint8_t m_type = 0; // arms/legs etc..
+    uint8_t m_type = 0;         // CostumePartType
     bool m_full_part;
 };
 

@@ -98,6 +98,7 @@ const   QString &       getName() const { return m_name; }
         void            SendCharBuildInfo(BitStream &bs) const;
         void            recv_initial_costume(BitStream &src, const ColorAndPartPacker *packer);
         const Costume   *getCurrentCostume() const;
+        const Costume   *getSGCostume() const;
         const vCostumes *getAllCostumes() const;
         void            addCostumeSlot();
         void            saveCostume(uint32_t idx, Costume &new_costume);
@@ -126,7 +127,6 @@ const   QString &       getName() const { return m_name; }
 protected:
         QString         m_name;
         vCostumes       m_costumes;
-        Costume *       m_sg_costume;
         uint8_t         m_index;
 
         enum CharBodyType

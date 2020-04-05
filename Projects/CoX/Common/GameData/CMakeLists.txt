@@ -24,6 +24,7 @@ SET(target_CPP
     ${CMAKE_CURRENT_SOURCE_DIR}/StateStorage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SuperGroup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SuperGroupStats.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Task.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Team.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Trade.cpp
@@ -94,6 +95,7 @@ SET(target_INCLUDE
     ${CMAKE_CURRENT_SOURCE_DIR}/StateStorage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Store.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SuperGroup.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SuperGroupStats.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Task.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Team.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Trade.h

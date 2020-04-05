@@ -58,7 +58,8 @@ void cmdHandler_SuperGroupCostume(const QStringList &/*params*/, MapClientSessio
     if(!sgs->m_has_supergroup && !sgs->m_has_sg_costume)
         return;
 
-    sendSuperGroupCostume(sess, sgs->m_sg_costume);
+    Costume sg_costume = *sess.m_ent->m_char->getSGCostume();
+    sendSuperGroupCostume(sess, sg_costume);
 
     QString msg = QString("Sending SuperGroup Costume");
     qCDebug(logSlashCommand) << msg;
