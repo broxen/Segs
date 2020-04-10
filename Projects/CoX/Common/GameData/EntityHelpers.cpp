@@ -68,42 +68,6 @@ void setTeamID(Entity &e, uint8_t team_id)
                        << "\n  Members:" << e.m_team->m_team_members.data();
 }
 
-void setSuperGroup(Entity &e, bool has_sg, QString &sg_name)
-{
-    CharacterData *cd = &e.m_char->m_char_data;
-
-    if(has_sg == false)
-    {
-        cd->m_supergroup.m_has_supergroup = false;
-        cd->m_supergroup.m_sg_db_id = 0;
-        cd->m_supergroup.m_rank = SGRanks::Member;
-        cd->m_supergroup.m_has_sg_costume = false;
-        return;
-    }
-
-    SuperGroupData sgd;
-    sgd.m_sg_name       = sg_name;
-    sgd.m_sg_titles[0]  = "Leader";
-    sgd.m_sg_titles[1]  = "Captain";
-    sgd.m_sg_titles[2]  = "Member";
-    sgd.m_sg_emblem     = "Anarchy";
-    sgd.m_sg_colors[0]  = 0x996633FF;
-    sgd.m_sg_colors[1]  = 0x336699FF;
-    sgd.m_sg_leader_db_id = e.m_idx;
-    sgd.m_sg_motd       = "MOTD Test";
-    sgd.m_sg_motto      = "MOTTO Test";
-
-    addSuperGroup(e, sgd);
-
-    SuperGroup * sg = getSuperGroupByIdx(cd->m_supergroup.m_sg_db_id);
-    if(sg == nullptr)
-    {
-        qFatal("getSuperGroupByIdx returned nullptr");
-        return; // if somehow qFatal doesn't do it
-    }
-    sg->dump();
-}
-
 void setTarget(Entity &e, uint32_t target_idx)
 {
     // TODO: set target if enemy, set assist_target if friendly

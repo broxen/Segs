@@ -380,13 +380,15 @@ void Character::saveCostume(uint32_t idx, Costume &new_costume)
 
 void Character::serialize_costumes(BitStream &bs, const ColorAndPartPacker *packer , bool send_all_costumes) const
 {
-    if(send_all_costumes) // This is only sent to the current player
+    if(send_all_costumes) // This should only be true for the current player
     {
         bs.StoreBits(1, m_add_new_costume);
         if(m_add_new_costume)
         {
             bs.StoreBits(32, getCurrentCostumeIdx(*this));
-            bs.StoreBits(32, uint32_t(m_costumes.size())-1); // must be minus 1 because the client adds 1
+            // This isn't total costumes, this is additional costume slots.
+            // The client assumes every entity has at least 1 costume so this must be -1.
+            bs.StoreBits(32, uint32_t(m_costumes.size())-1);
         }
 
         bool multiple_costumes = m_costumes.size() > 1;

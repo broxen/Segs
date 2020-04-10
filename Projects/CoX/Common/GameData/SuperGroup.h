@@ -23,10 +23,10 @@ struct SuperGroupData
     enum : uint32_t { class_version = 1 };  // v1: Creation
     QString     m_sg_titles[3];             // Eventually we'll need to support additional titles (I6+)
     QString     m_sg_name;                  // 64 chars max. Here for quick lookup.
-    QString     m_sg_created_date;
     QString     m_sg_motto;
     QString     m_sg_motd;
     QString     m_sg_emblem;                // 128 chars max -> Emblem hash table key from the CostumeString_HTable.
+    uint32_t    m_sg_created_date;
     uint32_t    m_sg_colors[2] = {0};
     uint32_t    m_sg_db_id;
     uint32_t    m_sg_leader_db_id = 0;
@@ -54,7 +54,7 @@ virtual ~SuperGroup() = default;
         // Methods
         void        dump();
         void        listSGMembers();
-        void        addSGMember(Entity *e, SGRanks rank);
+        void        addSGMember(Entity &e, SGRanks rank);
         void        removeSGMember(Entity *e);
         uint32_t    getSGLeaderDBID();
         bool        makeSGLeader(Entity &tgt);
@@ -80,9 +80,10 @@ QString demoteSG(Entity &src, Entity &tgt);
 
 SuperGroupStats *getSGMember(Entity &tgt, uint32_t sg_idx);
 SuperGroup* getSuperGroupByIdx(uint32_t sg_idx);
+void setSuperGroup(Entity &e, bool has_sg, QString &sg_name);
 void addSuperGroup(Entity &e, SuperGroupData &data);
 void removeSuperGroup(uint32_t sg_db_id);
-bool isSuperGroupValid(SuperGroupData &data);
+bool isSuperGroupValid(QString &name);
 void setSGCostumeColors(Costume &costume, uint32_t colors[]);
 void createSGCostume(Entity &e, SuperGroupData &data);
 

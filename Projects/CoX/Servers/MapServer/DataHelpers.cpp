@@ -413,16 +413,20 @@ void sendTimeUpdate(MapClientSession &sess, int32_t sec_since_jan_1_2000)
     sess.addCommand<TimeUpdate>(sec_since_jan_1_2000);
 }
 
-void sendRegisterSuperGroup(MapClientSession &ent, QString &val)
+void sendRegisterSuperGroup(MapClientSession &sess, QString &val)
 {
-    qCDebug(logSlashCommand) << "Sending RegisterSuperGroup:" << ent.m_ent->m_idx << val;
-    ent.addCommand<RegisterSuperGroup>(val);
+    // Is registrant level 10+?
+    if(getLevel(*sess.m_ent->m_char) < 10)
+        return;
+
+    qCDebug(logSlashCommand) << "Sending RegisterSuperGroup:" << sess.m_ent->m_idx << val;
+    sess.addCommand<RegisterSuperGroup>(val);
 }
 
-void sendSuperGroupCostume(MapClientSession &ent, Costume &costume)
+void sendSuperGroupCostume(MapClientSession &sess, Costume &costume)
 {
-    qCDebug(logSlashCommand) << "Sending SuperGroupCostume:" << ent.m_ent->m_idx;
-    ent.addCommand<SuperGroupCostume>(costume);
+    qCDebug(logSlashCommand) << "Sending SuperGroupCostume:" << sess.m_ent->m_idx;
+    sess.addCommand<SuperGroupCostume>(costume);
 }
 
 void sendClientState(MapClientSession &sess, ClientStates client_state)

@@ -68,8 +68,8 @@ void deleteEmailHeaders(MapClientSession& sess, const uint32_t email_id);
 /*
  * SendUpdate Wrappers
  */
-void sendRegisterSuperGroup(MapClientSession &ent, QString &val);
-void sendSuperGroupCostume(MapClientSession &ent, Costume &costume);
+void sendRegisterSuperGroup(MapClientSession &sess, QString &val);
+void sendSuperGroupCostume(MapClientSession &sess, Costume &costume);
 void sendInfoMessage(MessageChannel ch, const QString &msg, MapClientSession &tgt);
 void sendTimeStateLog(MapClientSession &sess, uint32_t control_log);
 void sendTimeUpdate(MapClientSession &sess, int32_t sec_since_jan_1_2000);

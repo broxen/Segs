@@ -107,5 +107,13 @@ struct RGBA
     glm::vec3 to3Floats() const { return glm::vec3(
                     rgba.r/255.0f,rgba.g/255.0f,rgba.b/255.0f); }
     RGB toRGB() const { return {rgba.r,rgba.g,rgba.b}; }
+    uint32_t toABGR() const {
+        RGBA copy;
+        copy.rgba.a = rgba.r;
+        copy.rgba.b = rgba.g;
+        copy.rgba.g = rgba.b;
+        copy.rgba.r = rgba.a;
+        return copy.val;
+    }
 };
 static_assert(sizeof(RGBA)==4,"sizeof(RGBA)==4");

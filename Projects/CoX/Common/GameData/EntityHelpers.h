@@ -77,7 +77,6 @@ void    setJumpHeight(Entity &e, float val);
 void    setUpdateID(Entity &e, uint8_t val);
 void    resetSpeed(Entity &e);
 void    setTeamID(Entity &e, uint8_t team_id);
-void    setSuperGroup(Entity &e, bool has_sg, QString &sg_name);
 void    setTarget(Entity &e, uint32_t target_idx);
 void    setAssistTarget(Entity &e, uint32_t target_idx);
 void    setCurrentDestination(Entity &e, int point_idx, glm::vec3 location);

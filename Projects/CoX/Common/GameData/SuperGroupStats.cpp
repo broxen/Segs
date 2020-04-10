@@ -61,12 +61,15 @@ SuperGroup* SuperGroupStats::getSuperGroup()
 
 void SuperGroupStats::dump()
 {
-    QString msg = QString("SuperGroup Info\n  has_supergroup: %1 \n  db_id: %2 \n  rank: %3 ")
+    QString msg = QString("SuperGroup Info\n  has_supergroup: %1 \n  db_id: %2 \n  sg_mode: %3 \n  has_sg_costume: %4 \n  rank: %5 ")
             .arg(m_has_supergroup)
             .arg(m_sg_db_id)
+            .arg(m_sg_mode)
+            .arg(m_has_sg_costume)
             .arg(static_cast<uint32_t>(m_rank));
 
     qDebug().noquote() << msg;
+    m_sg_costume.dump();
 }
 
 

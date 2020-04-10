@@ -13,6 +13,7 @@
 #include "SuperGroup.h"
 
 #include "Character.h"
+#include "Colors.h"
 #include "Entity.h"
 #include "EntityHelpers.h"
 #include "Logging.h"
@@ -60,37 +61,44 @@ SPECIALIZE_CLASS_VERSIONED_SERIALIZATIONS(SuperGroupData)
  */
 uint32_t SuperGroup::m_sg_idx_counter = 0;
 
-void SuperGroup::addSGMember(Entity *e, SGRanks rank)
+void SuperGroup::addSGMember(Entity &e, SGRanks rank)
 {
-    CharacterData *cd = &e->m_char->m_char_data;
+    CharacterData *cd = &e.m_char->m_char_data;
 
-    if(m_sg_members.size() >= s_max_sg_size)
-        return;
-
-    if(cd->m_supergroup.m_has_supergroup)
+    // If SG is full, or player already has a supergroup, return
+    if(m_sg_members.size() >= s_max_sg_size || cd->m_supergroup.m_has_supergroup)
         return;
 
     SuperGroupStats sgs;
-    sgs.m_name          = e->name();
-    sgs.m_member_db_id  = e->m_db_id;
+    sgs.m_has_supergroup = true;
+    sgs.m_sg_db_id      = m_sg_db_id;
     sgs.m_rank          = rank;
+    sgs.m_member_db_id  = e.m_db_id;
     sgs.m_hours_logged  = 0;
     sgs.m_date_joined   = getSecsSince2000Epoch();
     sgs.m_last_online   = getSecsSince2000Epoch();
     sgs.m_is_online     = true;
-    sgs.m_class_icon    = e->m_char->m_char_data.m_class_name;
-    sgs.m_origin_icon   = e->m_char->m_char_data.m_origin_name;
+    sgs.m_name          = e.name();
+    sgs.m_sg_name       = m_sg_name;
+    sgs.m_origin_icon   = cd->m_origin_name;
+    sgs.m_class_icon    = cd->m_class_name;
 
+    // Add member to supergroup member list
     m_sg_members.push_back(sgs);
-    cd->m_supergroup.m_has_supergroup = true;
-    cd->m_supergroup.m_sg_db_id = m_sg_db_id;
+    // Add supergroup stats to player
+    cd->m_supergroup = sgs;
+    // Build new SG costume from current costume
+    createSGCostume(e, this->m_data);
 
     if(m_sg_members.size() <= 1)
-        m_data.m_sg_leader_db_id = e->m_db_id;
+        m_data.m_sg_leader_db_id = e.m_db_id;
 
-    qCDebug(logSuperGroups) << "Adding" << e->name() << "to supergroup" << m_sg_db_id;
+    qCDebug(logSuperGroups) << "Adding" << e.name() << "to supergroup" << m_sg_db_id;
     if(logSuperGroups().isDebugEnabled())
+    {
         dump();
+        cd->m_supergroup.dump();
+    }
 
 }
 
@@ -108,8 +116,15 @@ void SuperGroup::removeSGMember(Entity *e)
             m_data.m_sg_leader_db_id = m_sg_members.front().m_member_db_id;
 
         iter = m_sg_members.erase(iter);
+        // reset everything
         cd->m_supergroup.m_has_supergroup = false;
+        cd->m_supergroup.m_has_sg_costume = false;
+        cd->m_supergroup.m_sg_mode = false;
+        cd->m_supergroup.m_sg_costume = *e->m_char->getCurrentCostume();
         cd->m_supergroup.m_sg_db_id = 0;
+
+        markEntityForUpdate(e, EntityUpdateFlags::SuperGroup);
+        markEntityForUpdate(e, EntityUpdateFlags::Costumes);
 
         qCDebug(logSuperGroups) << "Removing" << iter->m_name << "from SuperGroup" << m_sg_db_id;
         if(logSuperGroups().isDebugEnabled())
@@ -210,7 +225,7 @@ SGResponse inviteSG(Entity &src, Entity &tgt)
     response.msgfrom = "Inviting " + tgt.name() + " to SuperGroup.";
     response.msgtgt = src.name() + " has invited you to join their SuperGroup.";
 
-    sg->addSGMember(&tgt, SGRanks::Member);
+    sg->addSGMember(tgt, SGRanks::Member);
     markSuperGroupForDbStore(sg, SuperGroupDbStoreFlags::Full);
     return response;
 }
@@ -258,24 +273,24 @@ void leaveSG(Entity &e)
     markSuperGroupForDbStore(sg, SuperGroupDbStoreFlags::Full);
 
     // if there are no members left, delete SG
-    //if(sg->m_sg_members.size == 0)
-        //removeSuperGroup(sg);
+    if(sg->m_sg_members.empty())
+        removeSuperGroup(sg->m_sg_db_id);
 }
 
 bool toggleSGMode(Entity &e)
 {
-    CharacterData *cd = &e.m_char->m_char_data;
+    SuperGroupStats *sgs = &e.m_char->m_char_data.m_supergroup;
 
-    if(!cd->m_supergroup.m_has_supergroup)
+    if(!sgs->m_has_supergroup)
     {
         qCWarning(logSuperGroups) << "Trying to change SuperGroup mode, but Entity has no SG!?";
         return false;
     }
 
-    cd->m_supergroup.m_sg_mode = !cd->m_supergroup.m_sg_mode;
-    qCDebug(logSuperGroups) << "Toggling SG Mode to" << cd->m_supergroup.m_sg_mode;
+    sgs->m_sg_mode = !sgs->m_sg_mode;
+    qCDebug(logSuperGroups) << "Toggling SG Mode to" << sgs->m_sg_mode;
 
-    return cd->m_supergroup.m_sg_mode;
+    return sgs->m_sg_mode;
 }
 
 QString setSGMOTD(Entity &e, const QString &motd)
@@ -421,35 +436,65 @@ SuperGroupStats* getSGMember(Entity &tgt, uint32_t sg_idx)
 SuperGroup* getSuperGroupByIdx(uint32_t sg_idx)
 {
     //qCDebug(logSuperGroups) << "Searching for SuperGroup" << sg_idx;
-    if(sg_idx != 0)
+    if(sg_idx != 0 && sg_idx <= g_all_supergroups.size())
         return &g_all_supergroups.at(sg_idx-1);
 
     return nullptr;
 }
 
-void addSuperGroup(Entity &e, SuperGroupData &data)
+void setSuperGroup(Entity &e, bool has_sg, QString &sg_name)
 {
     CharacterData *cd = &e.m_char->m_char_data;
-    SuperGroup sg;
 
-    sg.m_data = data;
-    sg.addSGMember(&e, SGRanks::Leader);
+    if(has_sg == false)
+    {
+        cd->m_supergroup.m_has_supergroup = false;
+        cd->m_supergroup.m_sg_db_id = 0;
+        cd->m_supergroup.m_rank = SGRanks::Member;
+        cd->m_supergroup.m_has_sg_costume = false;
+        return;
+    }
+
+    SuperGroupData sgd;
+    sgd.m_sg_name       = sg_name;
+    sgd.m_sg_titles[0]  = "Leader";
+    sgd.m_sg_titles[1]  = "Captain";
+    sgd.m_sg_titles[2]  = "Member";
+    sgd.m_sg_emblem     = "Torch_01";
+    sgd.m_sg_colors[0]  = 0x996633FF; //0x9799FF
+    sgd.m_sg_colors[1]  = 0x336699FF; //0xD48C00FF 0x553800FF
+    sgd.m_sg_leader_db_id = e.m_idx;
+    sgd.m_sg_motd       = "MOTD Test";
+    sgd.m_sg_motto      = "MOTTO Test";
+
+    addSuperGroup(e, sgd);
+
+    SuperGroup * sg = getSuperGroupByIdx(cd->m_supergroup.m_sg_db_id);
+    if(sg == nullptr)
+    {
+        qFatal("getSuperGroupByIdx returned nullptr");
+        return; // if somehow qFatal doesn't do it
+    }
+}
+
+void addSuperGroup(Entity &e, SuperGroupData &data)
+{
+    SuperGroup sg;
+    sg.m_data.m_sg_name         = data.m_sg_name;
+    sg.m_data.m_sg_created_date = getSecsSince2000Epoch();
+    sg.m_data.m_sg_motto        = data.m_sg_motto;
+    sg.m_data.m_sg_motd         = data.m_sg_motd;
+    sg.m_data.m_sg_emblem       = data.m_sg_emblem;
+    sg.m_data.m_sg_leader_db_id = data.m_sg_leader_db_id;
+    sg.m_data.m_sg_titles[0]    = data.m_sg_titles[0];
+    sg.m_data.m_sg_titles[1]    = data.m_sg_titles[1];
+    sg.m_data.m_sg_titles[2]    = data.m_sg_titles[2];
+    sg.m_data.m_sg_colors[0]    = data.m_sg_colors[0];
+    sg.m_data.m_sg_colors[1]    = data.m_sg_colors[1];
+
+    sg.addSGMember(e, SGRanks::Leader);
     g_all_supergroups.push_back(sg);
 
-    if(logSuperGroups().isDebugEnabled())
-        g_all_supergroups.back().dump();
-
-    // New SuperGroup, build new costume from current costume
-    // TODO: createSGCostume(e, data);
-    //cd->m_supergroup.m_sg_costume       = *e.m_char->getCurrentCostume();
-    cd->m_supergroup.m_sg_db_id         = sg.m_sg_db_id;
-    cd->m_supergroup.m_has_supergroup   = true;
-    cd->m_supergroup.m_rank             = SGRanks::Leader; // first member should be leader
-    cd->m_supergroup.m_has_sg_costume   = true;
-    cd->m_supergroup.m_sg_mode          = false;
-    cd->m_supergroup.m_sg_costume.m_send_full_costume = true;
-
-    markEntityForUpdate(&e, EntityUpdateFlags::Costumes);
     markEntityForUpdate(&e, EntityUpdateFlags::SuperGroup);
 }
 
@@ -461,72 +506,89 @@ void removeSuperGroup(uint32_t sg_db_id)
         iter = g_all_supergroups.erase(iter);
 }
 
-bool isSuperGroupValid(SuperGroupData &data)
+bool isSuperGroupValid(QString &name)
 {
-    // Check to ensure name isn't already in use or restricted
-    // if(isSGNameTaken(data.m_sg_name)) return false;
-
-    // Check to ensure titles aren't restricted (foul language, etc)
-    // if(areSGTitlesInvalid(data.m_sg_titles)) return false;
-
-    // Is registrant level 10+?
-    // if(getLevel(ent) < 10) return false;
+    // TODO: Check to ensure name isn't already in use or restricted
+    // if(isSGNameIsInvalid(data.m_sg_name) || isSGNameTaken(data.m_sg_name))
+    //     return false;
 
     // For now let's simply provide a means for testing
-    if(data.m_sg_name.contains("Success", Qt::CaseInsensitive))
+    if(name.contains("Success", Qt::CaseInsensitive))
         return true;
 
-    return false;
+    return false; // client sends "Invalid SuperGroup Name" msg
 }
 
 void setSGCostumeColors(Costume &costume, uint32_t colors[])
 {
-    // TODO: are colors supposed to alternate primary and secondary?
+    uint32_t pri_color_slot;
+    uint32_t sec_color_slot;
+    uint32_t index;
+
+    // Colors are alternated depending upon the part
     for(auto &part : costume.m_parts)
     {
-        part.m_colors[0] = colors[0];
-        part.m_colors[1] = colors[1];
+        pri_color_slot = (colors[0] >> 2 * index) & 3;
+        sec_color_slot = (colors[1] >> 2 * index) & 3;
+
+        if(pri_color_slot == 2)
+            part.m_colors[0] = RGBA(colors[0]).toABGR();
+        else if(pri_color_slot == 3)
+            part.m_colors[0] = RGBA(colors[1]).toABGR();
+
+        if(sec_color_slot == 2)
+            part.m_colors[1] = RGBA(colors[0]).toABGR();
+        else if(sec_color_slot == 3)
+            part.m_colors[1] = RGBA(colors[1]).toABGR();
+
+        ++index;
     }
 }
 
 void createSGCostume(Entity &e, SuperGroupData &data)
 {
-    SuperGroupStats *sgs = &e.m_char->m_char_data.m_supergroup;
+    SuperGroupStats &sgs = e.m_char->m_char_data.m_supergroup;
 
-    if(!sgs->m_has_sg_costume)
+    // if we already have a costume, return
+    if(sgs.m_has_sg_costume)
         return;
 
     // set SG Costume to current costume
-    sgs->m_sg_costume = *e.m_char->getCurrentCostume();
+    sgs.m_sg_costume = *e.m_char->getCurrentCostume();
 
     // if Emblem is set, change it and change costume top if necessary
     if(!data.m_sg_emblem.isEmpty())
     {
         // We can't be sure that these parts will always be at the same idx.
         // Get idx of "Chest" and "ChestDetail" in parts array
-        uint32_t chest_idx = distance(sgs->m_sg_costume.m_parts.begin(), std::find_if(
-                                        sgs->m_sg_costume.m_parts.begin(),
-                                        sgs->m_sg_costume.m_parts.end(),
+        uint32_t chest_idx = distance(sgs.m_sg_costume.m_parts.begin(), std::find_if(
+                                        sgs.m_sg_costume.m_parts.begin(),
+                                        sgs.m_sg_costume.m_parts.end(),
                                         [] (const CostumePart& cp) { return cp.m_type == uint8_t(CostumePartType::Chest); }));
-        uint32_t chest_detail_idx = distance(sgs->m_sg_costume.m_parts.begin(), std::find_if(
-                                        sgs->m_sg_costume.m_parts.begin(),
-                                        sgs->m_sg_costume.m_parts.end(),
+        uint32_t chest_detail_idx = distance(sgs.m_sg_costume.m_parts.begin(), std::find_if(
+                                        sgs.m_sg_costume.m_parts.begin(),
+                                        sgs.m_sg_costume.m_parts.end(),
                                         [] (const CostumePart& cp) { return cp.m_type == uint8_t(CostumePartType::ChestDetail); }));
 
         // CoX could only do chest emblems on some peices, let's single those out here
         static const QStringList ok_chest_pieces = { "tight", "jacket", "baggy", "armored"};
 
         // if chest piece isn't on of the ok types, then change it to "tight"
-        if(!ok_chest_pieces.contains(sgs->m_sg_costume.m_parts[chest_idx].m_geometry, Qt::CaseInsensitive))
-            sgs->m_sg_costume.m_parts[chest_detail_idx].m_geometry = "tight";
+        if(!ok_chest_pieces.contains(sgs.m_sg_costume.m_parts[chest_idx].m_geometry, Qt::CaseInsensitive))
+            sgs.m_sg_costume.m_parts[chest_detail_idx].m_geometry = "tight";
 
         // set textures
-        sgs->m_sg_costume.m_parts[chest_detail_idx].m_texture_1 = "base";
-        sgs->m_sg_costume.m_parts[chest_detail_idx].m_texture_2 = qPrintable(data.m_sg_emblem);
+        sgs.m_sg_costume.m_parts[chest_detail_idx].m_texture_1 = "base";
+        sgs.m_sg_costume.m_parts[chest_detail_idx].m_texture_2 = qPrintable(data.m_sg_emblem);
     }
 
     // set SG Colors
-    setSGCostumeColors(sgs->m_sg_costume, data.m_sg_colors);
+    setSGCostumeColors(sgs.m_sg_costume, data.m_sg_colors);
+
+    // flag costumes for update
+    sgs.m_has_sg_costume = true;
+    sgs.m_sg_costume.m_send_full_costume = true;
+    markEntityForUpdate(&e, EntityUpdateFlags::Costumes);
 }
 
 /*

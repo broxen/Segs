@@ -33,9 +33,9 @@ struct SuperGroupStats
     Costume     m_sg_costume;
 
     // The below are needed by /sgstats
-    uint32_t    m_member_db_id  = 0; // db_id of supergroup
-    uint32_t    m_date_joined   = 0; // date joined as ms since Jan 1 2000
+    uint32_t    m_member_db_id  = 0; // db_id of member
     uint32_t    m_hours_logged  = 0; // hours logged in sg_mode
+    uint32_t    m_date_joined   = 0; // date joined as ms since Jan 1 2000
     uint32_t    m_last_online   = 0; // last online as ms since Jan 1 2000
     bool        m_is_online     = false;
     QString     m_name;

@@ -167,10 +167,9 @@ namespace
 
 void storeSuperStats(BitStream &bs, CharacterData &self)
 {
-    bool has_sg_stats = false;
-
     if(!self.m_supergroup.m_has_supergroup)
     {
+        // no supergroup, then send a pkt and return
         bs.StorePackedBits(1, 0);
         return;
     }
@@ -182,14 +181,15 @@ void storeSuperStats(BitStream &bs, CharacterData &self)
         return; // if somehow qFatal doesn't do it
     }
 
-    bs.StorePackedBits(1, sg->m_sg_members.size());
+    // send the number of SG Members
+    uint32_t num_sg_members = static_cast<uint32_t>(sg->m_sg_members.size());
+    bs.StorePackedBits(1, num_sg_members);
 
-    if(sg->m_sg_members.size() > 0)
-        has_sg_stats = true;
-    else
+    // If there are no members, exit. Otherwise send stuff
+    if(sg->m_sg_members.empty())
         return;
 
-    bs.StoreBits(1, has_sg_stats);
+    bs.StoreBits(1, num_sg_members > 0); // has_stats
 
     for(SuperGroupStats &m : sg->m_sg_members)
     {
@@ -504,18 +504,9 @@ void serialize_char_full_update(const Entity &src, BitStream &bs )
     sendChatSettings(player_data.m_gui,bs);
     player_char.sendTitles(bs,NameFlag::NoName,ConditionalFlag::Unconditional); // NoName, we already sent it above.
 
-    if(src.m_has_owner)
-    {
-        // TODO: if has owner, send again using owner info (desc first this time)
-        bs.StoreString(getDescription(player_char));    // max 1024
-        bs.StoreString(getBattleCry(player_char));      // max 128
-    }
-    else
-    {
-        // client expects this anyway, so let's send again (desc first this time)
-        bs.StoreString(getDescription(player_char));    // max 1024
-        bs.StoreString(getBattleCry(player_char));      // max 128
-    }
+    // client requires we send these again a second time, but in a different order
+    bs.StoreString(getDescription(player_char));    // max 1024
+    bs.StoreString(getBattleCry(player_char));      // max 128
 
     PUTDEBUG("before auth data");
     bs.StoreBitArray(player_data.m_auth_data,128);

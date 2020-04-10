@@ -2917,9 +2917,9 @@ void MapInstance::on_create_supergroup(CreateSuperGroup *ev)
                           << ev->data.m_sg_colors[1];
 
     // this order of operations is important
+    // check if SuperGroup name is valid
     qCDebug(logSuperGroups) << "Before Success Check";
-    // check if SuperGroup data is valid
-    bool sg_is_valid = isSuperGroupValid(ev->data);
+    bool sg_is_valid = isSuperGroupValid(ev->data.m_sg_name);
 
     Costume costume = *session.m_ent->m_char->getCurrentCostume();
     // if sg is invalid (invalid name, etc) send response and return
@@ -2930,17 +2930,17 @@ void MapInstance::on_create_supergroup(CreateSuperGroup *ev)
         return;
     }
 
+    // Values are valid, go ahead and create the SuperGroup
     addSuperGroup(*session.m_ent, ev->data); // Finalize adding SG to sg storage and entity to memberlist
 
     SuperGroupStats *sgs = &session.m_ent->m_char->m_char_data.m_supergroup;
-    qCDebug(logSuperGroups) << "has supergroup and costume: " << sgs->m_has_sg_costume << sgs->m_has_sg_costume;
     if(!sgs->m_has_supergroup && !sgs->m_has_sg_costume)
         return;
 
-    costume = *session.m_ent->m_char->getSGCostume();
-    session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
+    //costume = *session.m_ent->m_char->getSGCostume();
+    //session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
 
-//    // Finally, create SG in Database
+    // Finally, create SG in Database
 //    QString serialized_sg_data, serialized_sg_members;
 //    serializeToQString(ev->data, serialized_sg_data);
 //    serializeToQString(session.m_ent->m_char->m_char_data.m_supergroup.getSuperGroup()->m_sg_members, serialized_sg_members);
@@ -2957,8 +2957,8 @@ void MapInstance::on_change_supergroup_colors(ChangeSuperGroupColors *ev)
                           << ev->m_sg_colors[0]
                           << ev->m_sg_colors[1];
 
-    Costume costume = *session.m_ent->m_char->m_char_data.m_supergroup.m_sg_costume;
-    setSGCostumeColors(costume, ev->m_sg_colors);
+    Costume *costume = &session.m_ent->m_char->m_char_data.m_supergroup.m_sg_costume;
+    setSGCostumeColors(*costume, ev->m_sg_colors);
 }
 
 void MapInstance::on_accept_supergroup_changes(AcceptSuperGroupChanges *ev)
@@ -2966,21 +2966,9 @@ void MapInstance::on_accept_supergroup_changes(AcceptSuperGroupChanges *ev)
     MapClientSession &session(m_session_store.session_from_event(ev));
     qCDebug(logMapEvents) << "Entity: " << session.m_ent->m_idx << "has received SuperGroup Settings Accept Changes";
 
-    // check if SuperGroup data is still valid
-    bool sg_is_valid = isSuperGroupValid(ev->data);
-
-    Costume costume = *session.m_ent->m_char->getCurrentCostume();
-    // if sg is invalid (invalid name, etc) send response and return
-    if(!sg_is_valid)
-    {
-        // costume isn't really needed here, but I can't seem to overload the GameCommand
-        session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
-        return;
-    }
-
-    //makeSGChanges(ev);
-    costume = *session.m_ent->m_char->getSGCostume();
-    session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
+    bool is_valid = true; // = makeSGChanges(ev);
+    Costume costume = *session.m_ent->m_char->getSGCostume();
+    session.m_ent->m_client->addCommand<SuperGroupResponse>(is_valid, costume);
 }
 
 void MapInstance::on_supergroup_mode(SuperGroupMode *ev)
