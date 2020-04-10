@@ -140,16 +140,16 @@ void SuperGroupHandler::refresh_sg_roster(uint32_t sg_db_id)
 }
 
 /*
- * This function runs only when a new client connects.  We get their FriendsList,
+ * This function runs only when a new client connects.  We get their Supergroup,
  * db id, and map instance information and store it.  We also notify other players
- * who may have added this client that they are now online.
+ * in the supergroup that contains this client that they are now online.
  */
 void SuperGroupHandler::on_client_connected(ClientConnectedMessage *msg)
 {
-    //A player has connected, we need to notify all the people that have added this character as a friend
+    //A player has connected, we need to notify all the other SG Members
     uint32_t &char_db_id = msg->m_data.m_char_db_id;
 
-    //Store the map instance ID so that we know where to send the constructed FriendsList
+    //Store the map instance ID so that we know where to send the constructed SG Member List
     uint64_t session_token = msg->m_data.m_session;
     uint32_t server_id = msg->m_data.m_server_id;
     uint32_t instance_id = msg->m_data.m_sub_server_id;
@@ -180,7 +180,7 @@ void SuperGroupHandler::on_client_connected(ClientConnectedMessage *msg)
 
 /*
  * When a client disconnects, update their online status and
- * update lists for the friends that added this player.
+ * update lists for the supergroup that contains this player.
  */
 void SuperGroupHandler::on_client_disconnected(ClientDisconnectedMessage *msg)
 {
@@ -227,7 +227,6 @@ SuperGroupHandler::SuperGroupHandler(int for_game_server_id) : m_message_bus_end
     assert(HandlerLocator::getSuperGroup_Handler() == nullptr);
     HandlerLocator::setSuperGroup_Handler(this);
 
-    m_message_bus_endpoint.subscribe(evClientDisconnectedMessage);
     m_message_bus_endpoint.subscribe(evClientDisconnectedMessage);
 
     set_db_handler(for_game_server_id);

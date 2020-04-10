@@ -211,7 +211,6 @@ public:
         bool                m_hasRagdoll                = false;
         bool                m_has_owner                 = false;
         bool                m_create_player             = false;
-        bool                m_rare_update               = false; // to be replaced by m_client_update_flags
         int                 m_input_pkt_id              = {0};
         uint32_t            m_input_ack                 = {0};
         uint32_t            ownerEntityId               = 0;

@@ -30,7 +30,6 @@ void cmdHandler_SetSuperGroup(const QStringList &params, MapClientSession &sess)
 {
     int sg_id       = params.value(0).toInt();
     QString sg_name = params.value(1);
-    //int sg_rank     = params.value(2).toInt();
 
     setSuperGroup(*sess.m_ent, bool(sg_id), sg_name);
 

@@ -12,10 +12,10 @@
 
 #include "SlashCommand_Teams.h"
 
+#include "DataHelpers.h"
 #include "GameData/Character.h"
 #include "Logging.h"
 #include "MapInstance.h"
-#include "Messages/Map/SuperGroupEvents.h"
 #include "MessageHelpers.h"
 #include "Settings.h"
 

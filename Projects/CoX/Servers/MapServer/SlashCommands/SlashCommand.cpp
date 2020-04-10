@@ -184,7 +184,7 @@ static const SlashCommand g_defined_slash_commands[] = {
     /* SlashCommand_SuperGroup - Access Level 9 */
     {{"setSuperGroup","setSG"},"Set your Super Group", cmdHandler_SetSuperGroup, 9},
     {{"registerSG", "newSG"},"Register a Super Group", cmdHandler_RegisterSuperGroup, 9},
-    {{"SGcostume"},"Send Super Group Costume", cmdHandler_SuperGroupCostume, 9},
+    {{"SGcostume"},"Send Super Group Costume Packet", cmdHandler_SuperGroupCostume, 9},
     /* SlashCommand_SuperGroup - Access Level 1 */
     {{"sgstats"}, "Show or refresh SG Window", cmdHandler_SuperGroupStats, 1},
     {{"sgleave"}, "Leave SuperGroup", cmdHandler_SuperGroupLeave, 1},
@@ -291,11 +291,9 @@ void runCommand(const QString &str, MapClientSession &sess)
     args.pop_back();
     // May also produce an extra empty match if input ends in quote
     if (args.back().isEmpty())
-    {
         args.pop_back();
-    }
-    QString command_name = args.takeFirst();
 
+    QString command_name = args.takeFirst();
     for (const auto &cmd : g_defined_slash_commands)
     {
         if(cmd.m_valid_prefixes.contains(command_name, Qt::CaseInsensitive))
