@@ -50,9 +50,9 @@ void serializeto(const CostumePart &part, BitStream &bs,const ColorAndPartPacker
         packingContext->packColor(part.m_colors[1],bs);
         if(part.m_full_part)
         {
-            packingContext->packPartname(part.name_3,bs);
-            packingContext->packPartname(part.name_4,bs);
-            packingContext->packPartname(part.name_5,bs);
+            packingContext->packPartname(part.m_display_name,bs);
+            packingContext->packPartname(part.m_region_name,bs);
+            packingContext->packPartname(part.m_body_set_name,bs);
         }
     }
     catch(cereal::RapidJSONException &e)
@@ -76,9 +76,9 @@ void serializefrom(CostumePart &part,BitStream &bs,const ColorAndPartPacker *pac
         packingContext->unpackColor(bs,part.m_colors[1]);
         if(part.m_full_part)
         {
-            packingContext->unpackPartname(bs,part.name_3);
-            packingContext->unpackPartname(bs,part.name_4);
-            packingContext->unpackPartname(bs,part.name_5);
+            packingContext->unpackPartname(bs,part.m_display_name);
+            packingContext->unpackPartname(bs,part.m_region_name);
+            packingContext->unpackPartname(bs,part.m_body_set_name);
         }
     }
     catch(cereal::RapidJSONException &e)
@@ -130,9 +130,9 @@ void serialize(Archive &arc, CostumePart &cp, uint32_t const version)
     arc(cp.m_geometry);
     arc(cp.m_texture_1);
     arc(cp.m_texture_2);
-    arc(cp.name_3);
-    arc(cp.name_4);
-    arc(cp.name_5);
+    arc(cp.m_display_name);
+    arc(cp.m_region_name);
+    arc(cp.m_body_set_name);
     arc(cp.m_full_part);
     arc(cp.m_colors[0]);
     arc(cp.m_colors[1]);
@@ -205,7 +205,7 @@ void Costume::dump() const
         if(cp.m_full_part)
             qDebug().noquote() << cp.m_geometry << cp.m_texture_1 << cp.m_texture_2 <<
                         cp.m_colors[0] << cp.m_colors[1] <<
-                        cp.name_3 << cp.name_4 << cp.name_5;
+                        cp.m_display_name << cp.m_region_name << cp.m_body_set_name;
         else
             qDebug().noquote() << cp.m_geometry << cp.m_texture_1 << cp.m_texture_2 <<
                         cp.m_colors[0] << cp.m_colors[1];
@@ -225,8 +225,8 @@ void serializeto(const Costume &costume,BitStream &bs, const ColorAndPartPacker 
     bs.StoreBits(32, costume.m_skin_color); // rgb ?
     bs.StoreFloat(costume.m_height);
     bs.StoreFloat(costume.m_physique);
-
     bs.StoreBits(1, costume.m_send_full_costume);
+
     assert(!costume.m_parts.empty());
     bs.StorePackedBits(4, costume.m_parts.size());
     try

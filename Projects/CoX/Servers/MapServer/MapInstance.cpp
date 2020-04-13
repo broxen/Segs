@@ -2937,16 +2937,19 @@ void MapInstance::on_create_supergroup(CreateSuperGroup *ev)
     if(!sgs->m_has_supergroup && !sgs->m_has_sg_costume)
         return;
 
-    //costume = *session.m_ent->m_char->getSGCostume();
-    //session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
+    markEntityForUpdate(session.m_ent, EntityUpdateFlags::Full);
+    costume = *session.m_ent->m_char->getSGCostume();
+    session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
 
     // Finally, create SG in Database
-//    QString serialized_sg_data, serialized_sg_members;
-//    serializeToQString(ev->data, serialized_sg_data);
-//    serializeToQString(session.m_ent->m_char->m_char_data.m_supergroup.getSuperGroup()->m_sg_members, serialized_sg_members);
-//    game_db->putq(new CreateNewSuperGroupRequest({ev->data.m_sg_name, serialized_sg_data, serialized_sg_members},
-//                                                 session.m_session_token, this));
+    QString serialized_sg_data, serialized_sg_members;
+    serializeToQString(ev->data, serialized_sg_data);
+    serializeToQString(session.m_ent->m_char->m_char_data.m_supergroup.getSuperGroup()->m_sg_members, serialized_sg_members);
+    game_db->putq(new CreateNewSuperGroupRequest({ev->data.m_sg_name, serialized_sg_data, serialized_sg_members},
+                                                 session.m_session_token, this));
 
+    //session.m_ent->m_client->addCommand<SuperGroupCostume>(costume);
+    //session.m_ent->m_client->addCommand<SuperGroupResponse>(sg_is_valid, costume);
     qCDebug(logSuperGroups) << "After: MapInstance on_create_supergroup" << session.m_session_token;
 }
 

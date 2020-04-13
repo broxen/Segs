@@ -54,7 +54,7 @@ public:
     Costume m_costume;
 
     explicit SuperGroupResponse() : GameCommandEvent(MapEventTypes::evSuperGroupResponse) {}
-    SuperGroupResponse(bool &success, Costume &costume) : GameCommandEvent(MapEventTypes::evSuperGroupResponse),
+    SuperGroupResponse(bool success, Costume &costume) : GameCommandEvent(MapEventTypes::evSuperGroupResponse),
         m_success(success),
         m_costume(costume)
     {

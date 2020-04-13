@@ -28,6 +28,9 @@ void cmdHandler_SuperGroupMode(const QStringList &params, MapClientSession &sess
 void cmdHandler_SuperGroupPromote(const QStringList &params, MapClientSession &sess);
 void cmdHandler_SuperGroupDemote(const QStringList &params, MapClientSession &sess);
 void cmdHandler_SuperGroupTitles(const QStringList &params, MapClientSession &sess);
+void cmdHandler_SuperGroupNameLeader(const QStringList &params, MapClientSession &sess);
+void cmdHandler_SuperGroupNameCaptain(const QStringList &params, MapClientSession &sess);
+void cmdHandler_SuperGroupNameMember(const QStringList &params, MapClientSession &sess);
 
 // Access Level 0 Commands
 void cmdHandler_SuperGroupAccept(const QStringList &params, MapClientSession &sess);

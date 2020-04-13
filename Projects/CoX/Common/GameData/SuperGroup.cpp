@@ -138,7 +138,8 @@ void SuperGroup::removeSGMember(Entity *e)
             listSGMembers();
 
         m_data.m_sg_leader_db_id = m_sg_members.front().m_member_db_id;
-        // TODO: fix entity's rank somehow
+
+        // TODO: fix new leader's rank somehow. SuperGroupService should resolve this.
     }
 }
 
@@ -270,11 +271,12 @@ void leaveSG(Entity &e)
     }
 
     sg->removeSGMember(&e);
-    markSuperGroupForDbStore(sg, SuperGroupDbStoreFlags::Full);
 
     // if there are no members left, delete SG
     if(sg->m_sg_members.empty())
         removeSuperGroup(sg->m_sg_db_id);
+
+    markSuperGroupForDbStore(sg, SuperGroupDbStoreFlags::Full);
 }
 
 bool toggleSGMode(Entity &e)
@@ -386,7 +388,7 @@ QString modifySGRank(Entity &src, Entity &tgt, int rank_mod)
         return msg = "SuperGroup rank unmodified.";
 
     if((tgt_sg->m_rank == SGRanks::Leader && rank_mod > 0) || (tgt_sg->m_rank == SGRanks::Member && rank_mod < 0))
-        return msg = tgt.name() + " cannot modify range outside of range 1 to 3.";
+        return msg = tgt.name() + " cannot modify rank outside of range 1 to 3.";
 
     SuperGroupStats *tgt_revised = getSGMember(tgt, src_sg->m_sg_db_id);
     if(tgt_revised == nullptr)

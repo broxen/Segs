@@ -168,46 +168,77 @@ void cmdHandler_SuperGroupDemote(const QStringList &params, MapClientSession &se
 
 void cmdHandler_SuperGroupTitles(const QStringList &params, MapClientSession &sess)
 {
-    int idx = 0;
     QString msg = "Failed to change SG Titles.";
 
-    if(params.at(0).startsWith("nameLeader ", Qt::CaseInsensitive))
-        idx = 0;
-    else if(params.at(0).startsWith("nameCaptain ", Qt::CaseInsensitive))
-        idx = 1;
-    else if(params.at(0).startsWith("nameMember ", Qt::CaseInsensitive))
-        idx = 2;
-    else
-        idx = 3; // all titles
-
-    if(idx == 3)
+    if(params.size() < 3)
     {
-        msg.clear();
-
-        for(int i = 0; i<3; ++i)
-            msg += setSGTitle(*sess.m_ent, i, params.value(i+1)) + "\n";
+        qCDebug(logSlashCommand) << msg;
+        sendInfoMessage(MessageChannel::USER_ERROR, msg, sess);
+        return;
     }
-    else
-        msg = setSGTitle(*sess.m_ent, idx, params.value(1)); // take first arg only
+
+    for(int i = 0; i<3; ++i)
+        msg += setSGTitle(*sess.m_ent, i, params.value(i)) + "\n";
 
     qCDebug(logSuperGroups) << sess.m_ent->name() << msg;
     sendInfoMessage(MessageChannel::SUPERGROUP, msg, sess);
 }
 
+void cmdHandler_SuperGroupNameLeader(const QStringList &params, MapClientSession &sess)
+{
+    int idx = 0; // leader
+    QString msg;
+
+    if(params.empty())
+        msg = "Failed to change SG Leader Title.";
+    else
+        msg = setSGTitle(*sess.m_ent, idx, params.value(0));
+
+    qCDebug(logSuperGroups) << sess.m_ent->name() << msg;
+    sendInfoMessage(MessageChannel::SUPERGROUP, msg, sess);
+}
+
+void cmdHandler_SuperGroupNameCaptain(const QStringList &params, MapClientSession &sess)
+{
+    int idx = 1; // captain
+    QString msg;
+
+    if(params.empty())
+        msg = "Failed to change SG Captain Title.";
+    else
+        msg = setSGTitle(*sess.m_ent, idx, params.value(0));
+
+    qCDebug(logSuperGroups) << sess.m_ent->name() << msg;
+    sendInfoMessage(MessageChannel::SUPERGROUP, msg, sess);
+}
+
+void cmdHandler_SuperGroupNameMember(const QStringList &params, MapClientSession &sess)
+{
+    int idx = 2; // member
+    QString msg;
+
+    if(params.empty())
+        msg = "Failed to change SG Member Title.";
+    else
+        msg = setSGTitle(*sess.m_ent, idx, params.value(0));
+
+    qCDebug(logSuperGroups) << sess.m_ent->name() << msg;
+    sendInfoMessage(MessageChannel::SUPERGROUP, msg, sess);
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Access Level 0 Commands
 void cmdHandler_SuperGroupAccept(const QStringList &params, MapClientSession &sess)
 {
     // game command: "sg_accept \"From\" to_db_id to_db_id \"To\""
-    QString from_name       = params.value(1);
-    uint32_t src_db_id      = params.value(2).toUInt();
-    uint32_t tgt_db_id      = params.value(3).toUInt(); // always the same?
-    QString tgt_name        = params.value(4);
+    QString from_name       = params.value(0);
+    uint32_t src_db_id      = params.value(1).toUInt();
+    uint32_t tgt_db_id      = params.value(2).toUInt(); // always the same?
+    QString tgt_name        = params.value(3);
 
     if(tgt_name != sess.m_ent->name())
     {
-        qCDebug(logSlashCommand) << "SuperGroupAccept name does not match target.";
+        qCDebug(logSlashCommand) << "SuperGroupAccept " << from_name << " does not match target " << tgt_name;
         return;
     }
 
@@ -230,9 +261,9 @@ void cmdHandler_SuperGroupDecline(const QStringList &params, MapClientSession &s
 {
     // game command: "sg_decline \"From\" to_db_id \"To\""
     QString msg;
-    QString from_name   = params.value(1);
-    uint32_t tgt_db_id  = params.value(2).toUInt();
-    QString tgt_name    = params.value(3);
+    QString from_name   = params.value(0);
+    uint32_t tgt_db_id  = params.value(1).toUInt();
+    QString tgt_name    = params.value(2);
 
     Entity *from_ent = getEntity(&sess, from_name);
     if(from_ent == nullptr)

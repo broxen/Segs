@@ -40,9 +40,9 @@ struct CostumePart
     QString m_geometry;
     QString m_texture_1;
     QString m_texture_2;
-    QString name_3;
-    QString name_4;
-    QString name_5;
+    QString m_display_name;
+    QString m_region_name;
+    QString m_body_set_name;
     uint32_t m_colors[2] = {0};
     uint8_t m_type = 0;         // CostumePartType
     bool m_full_part;

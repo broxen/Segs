@@ -195,7 +195,10 @@ static const SlashCommand g_defined_slash_commands[] = {
     {{"sgmode"}, "Toggle SuperGroup Mode", cmdHandler_SuperGroupMode, 1},
     {{"promote"}, "Promote SuperGroup member to next rank", cmdHandler_SuperGroupPromote, 1},
     {{"demote"}, "Demote SuperGroup member to next lower rank", cmdHandler_SuperGroupDemote, 1},
-    {{"sgTitles", "nameLeader", "nameCaptain", "nameMember"}, "Set SuperGroup member rank title names", cmdHandler_SuperGroupTitles, 1},
+    {{"sgTitles"}, "Set SuperGroup member rank title names", cmdHandler_SuperGroupTitles, 1},
+    {{"nameLeader"}, "Set SuperGroup Leader title name", cmdHandler_SuperGroupNameLeader, 1},
+    {{"nameCaptain"}, "Set SuperGroup Captain title name", cmdHandler_SuperGroupNameCaptain, 1},
+    {{"nameMember"}, "Set SuperGroup Member title name", cmdHandler_SuperGroupNameMember, 1},
     /* SlashCommand_SuperGroup - Access Level 0 */
     {{"sg_accept"}, "Accept SuperGroup invite", cmdHandler_SuperGroupAccept, 0},
     {{"sg_decline"}, "Decline SuperGroup invite", cmdHandler_SuperGroupDecline, 0},
