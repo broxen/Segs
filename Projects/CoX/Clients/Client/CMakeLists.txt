@@ -2,28 +2,33 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 COMPONENTS Core Quick REQUIRED)
+find_package(Qt5 COMPONENTS Core Quick QuickControls2 Multimedia REQUIRED)
 
-add_executable(qml_dummy "main.cpp" "qml.qrc")
+set(SOURCES
+    main.cpp
+    qml.qrc
+)
+set(HEADERS version.h)
 
-target_link_libraries(qml_dummy Qt5::Core Qt5::Quick)
+add_executable(SEGS_Client ${SOURCES} ${HEADERS})
 
+target_link_libraries(SEGS_Client PRIVATE Qt5::Core Qt5::Quick Qt5::QuickControls2 Qt5::Multimedia)
 
-install(TARGETS qml_dummy
+install(TARGETS SEGS_Client
     DESTINATION deploy
 )
 IF(WIN32)
     include(Windeployqt)
-    windeployqt(qml_dummy deploy)
+    windeployqt(SEGS_Client deploy)
 ELSEIF(APPLE)
     include(Macdeployqt)
-    macdeployqt(qml_dummy deploy)
+    macdeployqt(SEGS_Client deploy)
 ENDIF()
 
 # Retain directory structure in visual studio
-get_target_property(TARGET_SOURCES qml_dummy SOURCES)
+get_target_property(TARGET_SOURCES SEGS_Client SOURCES)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${TARGET_SOURCES})
-set_target_properties (qml_dummy PROPERTIES
+set_target_properties (SEGS_Client PROPERTIES
     FOLDER Projects/CoX/Clients
     RUNTIME_OUTPUT_DIRECTORY   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/utilities
 )
