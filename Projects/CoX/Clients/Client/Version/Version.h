@@ -19,14 +19,15 @@
 
 #define ProjectOrg "SEGS"
 #define ProjectName ProjectOrg " Client"
-#define CodeName "Awakening"
+#define CodeName "New Beginnings"
 #define VersionString ProjectName " v" SEGS_CLIENT_VERSION "-" SEGS_CLIENT_BRANCH " (" CodeName ") [" SEGS_CLIENT_DESCRIPTION "]"
 #define ProjectDomain "segs.dev"
 #define CopyrightString "Super Entity Game Server\nhttp://github.com/Segs/\nCopyright (c) 2006-2020 Super Entity Game Server Team (see AUTHORS.md)\nThis software is licensed under the terms of the 3-clause BSD License. See LICENSE.md for details.\n";
 
 // Contains version information for the various server modules
-class ClientVersionInfo
+class ClientVersion
 {
+
 public:
     static const char *getVersionString(void) { return VersionString; }
     static const char *getVersionNumber(void) { return SEGS_CLIENT_VERSION; }

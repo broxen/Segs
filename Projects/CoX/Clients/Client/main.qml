@@ -4,6 +4,7 @@ import QtQuick.Window 2.13
 import QtQuick.Layouts 1.3
 import QtGraphicalEffects 1.0
 import QtMultimedia 5.13
+import "./ui/settings" as Settings
 
 ApplicationWindow {
     id: segs_client
@@ -16,19 +17,19 @@ ApplicationWindow {
 
     FontLoader {
         id: core_font
-        source: "resources/fonts/cantarell-bold.otf"
+        source: "./resources/fonts/cantarell-bold.otf"
         onStatusChanged: if (core_font.status == FontLoader.Ready) console.log('Loaded Core Font')
     }
 
     FontLoader {
         id: header_font
-        source: "resources/fonts/cuppajoe-regular.otf"
+        source: "./resources/fonts/cuppajoe-regular.otf"
         onStatusChanged: if (header_font.status == FontLoader.Ready) console.log('Loaded Header Font')
     }
 
     Audio {
         id: login_music
-        source: "resources/music/menu_loop.ogg"
+        source: "./resources/music/menu_loop.ogg"
         audioRole: GameRole
         autoLoad: true
         autoPlay: true
@@ -38,31 +39,46 @@ ApplicationWindow {
 
     Audio {
         id: good_button_sfx
-        source: "resources/sfx/run.ogg"
+        source: "./resources/sfx/run.ogg"
         audioRole: SonificationRole
     }
 
     Audio {
         id: bad_button_sfx
-        source: "resources/sfx/zone_border.ogg"
+        source: "./resources/sfx/zone_border.ogg"
         audioRole: SonificationRole
     }
 
     Audio {
         id: info_button_sfx
-        source: "resources/sfx/computer.ogg"
+        source: "./resources/sfx/computer.ogg"
         audioRole: SonificationRole
     }
 
     background: Image {
-        source: "resources/images/login-bg.png"
+        source: "./resources/images/login-bg.png"
     }
 
     palette {
-        windowText: "#F1F1F1" // since we're on a colored background
-        highlight: "SteelBlue"
-        dark: "SteelBlue" // reverse because we're on a dark bg
-        base: "#333333"
+        alternateBase:      "#FFDEE6ED"
+        base:               "#FFE1E1E1"
+        brightText:         "#FFEDF3F8"
+        button:             "SteelBlue"
+        buttonText:         "#FFEDF3F8"
+        dark:               "#FF91B6D4"
+        highlight:          "#FF1987E1"
+        highlightedText:    "#FFEDF3F8"
+        light:              "#FF91B6D4"
+        link:               "SteelBlue"
+        linkVisited:        "#FF396A93"
+        mid:                "#FF2B506E"
+        midlight:           "#FF6A7F90"
+        shadow:             "#AA0E1B25"
+        text:               "#FF29343D"
+        toolTipBase:        "#AA0E1B25"
+        toolTipText:        "#FFEDF3F8"
+        window:             "#FFE1E1E1"
+        windowText:         "#FFEDF3F8"
     }
 
     ColumnLayout {
@@ -80,7 +96,6 @@ ApplicationWindow {
 
         Label {
             id: login_username_label
-            color: "#F1F1F1"
             text: qsTr("Account Name:")
             verticalAlignment: Text.AlignBottom
             font.family: header_font.name
@@ -92,7 +107,7 @@ ApplicationWindow {
             layer.effect: DropShadow {
                 anchors.fill: login_username_label
                 source: login_username_label
-                color: "#AA4682B4"
+                color: "#AA4682B4" // semitransparent steelblue
                 radius: 0
                 transparentBorder: true
                 horizontalOffset: 2
@@ -102,8 +117,9 @@ ApplicationWindow {
 
         TextField {
             id: login_username
-            text: qsTr("")
+            text: qsTr(LoginSystem.username)
             placeholderText: "Username"
+            selectByMouse: true
             font.family: core_font.name
             font.pointSize: 12
             implicitWidth: parent.width
@@ -135,16 +151,16 @@ ApplicationWindow {
             indicator.scale: parent.scale * 0.75
             Layout.minimumHeight: 10
             font.family: core_font.name
-            font.pointSize: 12
+            font.pointSize: 10
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             Layout.fillWidth: true
             Layout.maximumHeight: 40
             Layout.preferredHeight: parent.height * 0.1
+            checked: LoginSystem.remember_username
         }
 
         Label {
             id: login_password_label
-            color: "#F1F1F1"
             text: qsTr("Account Password:")
             verticalAlignment: Text.AlignBottom
             font.family: header_font.name
@@ -156,7 +172,7 @@ ApplicationWindow {
             layer.effect: DropShadow {
                 anchors.fill: login_password_label
                 source: login_password_label
-                color: "#AA4682B4"
+                color: "#AA4682B4" // semitransparent steelblue
                 radius: 0
                 transparentBorder: true
                 horizontalOffset: 2
@@ -208,11 +224,11 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                 Layout.preferredWidth: parent.width * 0.4
                 Layout.minimumWidth: 50
-                padding: 14
+                padding: 10
 
                 palette {
                     button: "#F24444"
-                    buttonText: "#F1F1F1"
+                    buttonText: palette.buttonText
                 }
 
                 // override base style
@@ -222,7 +238,7 @@ ApplicationWindow {
                     color: exit_button.down ? "#F78C8C" : "#F24444"
                     border.color: exit_button.palette.highlight
                     border.width: exit_button.visualFocus ? 2 : 0
-                    radius: 6
+                    radius: 4
                 }
 
                 onClicked: {
@@ -240,12 +256,12 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                 Layout.preferredWidth: parent.width * 0.4
                 Layout.minimumWidth: 50
-                padding: 14
+                padding: 10
 
                 palette {
                     button: "#6BA358"
                     dark: "#6BA358"
-                    buttonText: "#F1F1F1"
+                    buttonText: palette.buttonText
                 }
 
                 // override base style
@@ -255,10 +271,13 @@ ApplicationWindow {
                     color: login_button.down ? "#92BF88" : "#6BA358"
                     border.color: login_button.palette.highlight
                     border.width: login_button.visualFocus ? 2 : 0
-                    radius: 6
+                    radius: 4
                 }
 
-                onClicked: { good_button_sfx.play() }
+                onClicked: {
+                    good_button_sfx.play()
+                    submitLoginInfo(login_username, login_password)
+                }
             }
         }
 
@@ -271,11 +290,10 @@ ApplicationWindow {
             Layout.preferredWidth: parent.width * 0.75
             Layout.minimumWidth: 50
             Layout.topMargin: 15
-            padding: 14
+            padding: 10
 
             palette {
-                buttonText: "#F1F1F1"
-                button: "SteelBlue"
+                buttonText: palette.buttonText
             }
 
             // override base style
@@ -285,20 +303,20 @@ ApplicationWindow {
                 color: settings_button.down ? "LightSteelBlue" : "SteelBlue"
                 border.color: settings_button.palette.highlight
                 border.width: settings_button.visualFocus ? 2 : 0
-                radius: 6
+                radius: 4
             }
 
             onClicked: {
                 info_button_sfx.play()
-                var settings_dialog = Qt.createComponent("SettingsDialog.qml").createObject(segs_client.contentItem, {});
-                settings_dialog.show();
+                settings_dialog.open()
             }
         }
     }
 
     Text {
         id: client_version_string
-        text: qsTr("Version String Will Go Here")
+        color: palette.windowText
+        text: qsTr(LoginSystem.version_string)
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignRight
         anchors.right: parent.right
@@ -308,7 +326,11 @@ ApplicationWindow {
         font.family: core_font.name
         font.italic: true
         font.pointSize: 10
-        color: "#F1F1F1"
+    }
+
+    // load our Settings Dialog Drawer for use later
+    Settings.SettingsDialog {
+        id: settings_dialog
     }
 
     Component.onCompleted: {

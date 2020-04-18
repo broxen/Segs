@@ -15,8 +15,10 @@
 #include <QQuickStyle>
 #include <QDebug>
 #include <QLoggingCategory>
+#include <QQmlContext>
 
-#include "version.h"
+#include "Login/Login.h"
+#include "Version/Version.h"
 
 int main(int argc, char *argv[])
 {
@@ -31,16 +33,23 @@ int main(int argc, char *argv[])
     QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true\nqt.*.debug=false"));
 
     QGuiApplication app(argc, argv);
-    app.setOrganizationName(ClientVersionInfo::getProjectOrg());
-    app.setOrganizationDomain(ClientVersionInfo::getProjectDomain());
-    app.setApplicationName(ClientVersionInfo::getProjectName());
-    app.setApplicationVersion(ClientVersionInfo::getVersionNumber());
-
-    QQmlApplicationEngine engine;
+    app.setOrganizationName(ClientVersion::getProjectOrg());
+    app.setOrganizationDomain(ClientVersion::getProjectDomain());
+    app.setApplicationName(ClientVersion::getProjectName());
+    app.setApplicationVersion(ClientVersion::getVersionNumber());
 
     // Print out Project Name and Version to console
-    qInfo().noquote() << ClientVersionInfo::getVersionString();
-    qInfo().noquote() << ClientVersionInfo::getCopyright();
+    qInfo().noquote() << ClientVersion::getVersionString();
+    qInfo().noquote() << ClientVersion::getCopyright();
+
+    QQmlApplicationEngine engine;
+    LoginSystem login_system;
+    // test some values:
+    login_system.setUsername("segsadmin");
+    login_system.setUsernameToggle(true);
+    login_system.setVersionString(ClientVersion::getVersionString());
+    // pass context to QML
+    engine.rootContext()->setContextProperty("LoginSystem", &login_system); // the object will be available in QML with name "LoginSystem"
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     if(engine.rootObjects().isEmpty())

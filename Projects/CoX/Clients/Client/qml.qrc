@@ -1,14 +1,18 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>resources/images/login-bg.png</file>
-        <file>resources/music/menu_loop.ogg</file>
-        <file>resources/sfx/computer.ogg</file>
-        <file>resources/sfx/mission_complete.ogg</file>
-        <file>resources/sfx/run.ogg</file>
-        <file>resources/sfx/zone_border.ogg</file>
-        <file>resources/fonts/cantarell-bold.otf</file>
-        <file>resources/fonts/cuppajoe-regular.otf</file>
-        <file>ui/settings/SettingsDialog.qml</file>
+    </qresource>
+    <qresource prefix="/resources">
+        <file alias="images/login-bg.png">resources/images/login-bg.png</file>
+        <file alias="music/menu_loop.ogg">resources/music/menu_loop.ogg</file>
+        <file alias="sfx/computer.ogg">resources/sfx/computer.ogg</file>
+        <file alias="sfx/mission_complete.ogg">resources/sfx/mission_complete.ogg</file>
+        <file alias="sfx/run.ogg">resources/sfx/run.ogg</file>
+        <file alias="sfx/zone_border.ogg">resources/sfx/zone_border.ogg</file>
+        <file alias="fonts/cantarell-bold.otf">resources/fonts/cantarell-bold.otf</file>
+        <file alias="fonts/cuppajoe-regular.otf">resources/fonts/cuppajoe-regular.otf</file>
+    </qresource>
+    <qresource prefix="/ui">
+        <file alias="settings/SettingsDialog.qml">ui/settings/SettingsDialog.qml</file>
     </qresource>
 </RCC>
