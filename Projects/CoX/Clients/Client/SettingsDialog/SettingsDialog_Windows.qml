@@ -18,8 +18,6 @@ ScrollView {
         // TODO: settings for Windows
         Label {
             text: qsTr("Settings for Windows will go here...")
-            font.family: Theme.core_font.name
-            font.pointSize: Theme.textSize
         }
     }
 }

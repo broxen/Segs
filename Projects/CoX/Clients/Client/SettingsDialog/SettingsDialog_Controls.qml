@@ -18,8 +18,6 @@ ScrollView {
         // TODO: settings for controls
         Label {
             text: qsTr("Settings for Controls will go here...")
-            font.family: Theme.core_font.name
-            font.pointSize: Theme.textSize
         }
     }
 }

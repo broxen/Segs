@@ -18,8 +18,6 @@ ScrollView {
         // TODO: settings for Graphics & Audio
         Label {
             text: qsTr("Settings for Graphics & Audio will go here...")
-            font.family: Theme.core_font.name
-            font.pointSize: Theme.textSize
         }
     }
 }

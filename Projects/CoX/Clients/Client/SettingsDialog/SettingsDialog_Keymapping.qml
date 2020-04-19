@@ -18,8 +18,6 @@ ScrollView {
         // TODO: settings for Keymapping
         Label {
             text: qsTr("Settings for Keymapping will go here...")
-            font.family: Theme.core_font.name
-            font.pointSize: Theme.textSize
         }
     }
 }

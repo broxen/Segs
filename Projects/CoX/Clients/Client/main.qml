@@ -21,6 +21,9 @@ ApplicationWindow {
         source: "./Resources/images/login-bg.png"
     }
 
+    // TODO: create custom Theme
+    font.family: Theme.core_font.name
+    font.pointSize: Theme.textSize
     palette {
         alternateBase:      Theme.alternateBase
         base:               Theme.base
@@ -81,7 +84,6 @@ ApplicationWindow {
             text: qsTr(LoginSystem.username)
             placeholderText: "Username"
             selectByMouse: true
-            font.family: Theme.core_font.name
             font.pointSize: Theme.loginControlTextSize
             implicitWidth: parent.width
             implicitHeight: 45
@@ -111,8 +113,6 @@ ApplicationWindow {
             leftPadding: 12
             indicator.scale: parent.scale * 0.65
             Layout.minimumHeight: 10
-            font.family: Theme.core_font.name
-            font.pointSize: Theme.textSize
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             Layout.fillWidth: true
             Layout.maximumHeight: 40
@@ -144,7 +144,6 @@ ApplicationWindow {
             id: login_password
             text: qsTr("")
             placeholderText: "Password"
-            font.family: Theme.core_font.name
             font.pointSize: Theme.loginControlTextSize
             echoMode: TextInput.Password
             implicitWidth: parent.width
@@ -275,8 +274,6 @@ ApplicationWindow {
         anchors.rightMargin: parent.width * 0.07
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 20
-        font.family: Theme.core_font.name
-        font.pointSize: Theme.textSize
         font.italic: true
     }
 
