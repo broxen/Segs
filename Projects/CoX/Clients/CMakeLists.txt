@@ -7,4 +7,7 @@ else()
     MESSAGE("Client_I0 should be compiled separately, since it has to be 32bit, and Your build is 64bit")
 endif()
 endif()
-add_subdirectory(Client)
+
+if(BUILD_SEGS_CLIENT)
+    add_subdirectory(Client)
+endif()

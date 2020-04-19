@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/Theme">
+        <file>qmldir</file>
+        <file>Theme.qml</file>
+    </qresource>
+</RCC>

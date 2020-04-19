@@ -1,6 +1,7 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 # for version and revision info. Derived from https://github.com/dolphin-emu/dolphin/blob/master/CMakeLists.txt#L132
 find_package(Git)
@@ -43,18 +44,30 @@ add_definitions(
     )
 
 find_package(Qt5 COMPONENTS Core Quick QuickControls2 Multimedia REQUIRED)
+find_package(Qt5QuickCompiler)
 
-set(SOURCES
+set(target_CPP
     main.cpp
     Login/Login.cpp
-    qml.qrc
 )
-set(HEADERS
+set(target_INCLUDE
     Login/Login.h
     Version/Version.h
 )
 
-add_executable(SEGS_Client ${SOURCES} ${HEADERS})
+set(target_RESOURCES
+    qml.qrc
+    Theme/Theme.qrc
+    SettingsDialog/SettingsDialog.qrc
+)
+
+set(SOURCES
+    ${target_CPP}
+    ${target_INCLUDE}
+    ${target_RESOURCES}
+)
+
+add_executable(SEGS_Client ${SOURCES})
 
 target_link_libraries(SEGS_Client PRIVATE Qt5::Core Qt5::Quick Qt5::QuickControls2 Qt5::Multimedia)
 
@@ -76,3 +89,5 @@ set_target_properties (SEGS_Client PROPERTIES
     FOLDER Projects/CoX/Clients
     RUNTIME_OUTPUT_DIRECTORY   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/client
 )
+
+file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/client/logs)

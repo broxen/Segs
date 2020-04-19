@@ -93,6 +93,7 @@ option(ENABLE_TESTS "Enable testing unit and functional tests" OFF)
 option(BUILD_COX_MAP_VIEWER "Build CoX map file viewer ?" OFF)
 option(BUILD_RPC_TEST_CLIENT "Build RPC Test Client ?" OFF)
 option(BUILD_CLIENT_PATCH "Build client patch for AMD graphics cards ?" OFF)
+option(BUILD_SEGS_CLIENT "Build SEGS Client" OFF)
 
 ########################################################################################
 # Prerequisites

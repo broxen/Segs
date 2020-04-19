@@ -16,7 +16,7 @@ class LoginSystem : public QObject
     Q_PROPERTY(QString username READ getUsername WRITE setUsername NOTIFY usernameChanged)
     Q_PROPERTY(QString password READ getPassword NOTIFY passwordChanged)
     Q_PROPERTY(bool remember_username READ getUsernameToggle WRITE setUsernameToggle NOTIFY usernameToggleChanged)
-    Q_PROPERTY(QString version_string READ getVersionString)
+    Q_PROPERTY(QString version_string READ getVersionString NOTIFY versionStringChanged)
 
 public:
     explicit LoginSystem(QObject *parent = nullptr);
@@ -36,6 +36,7 @@ signals: // future planning
     void usernameChanged();
     void passwordChanged();
     void usernameToggleChanged();
+    void versionStringChanged();
 
 private:
     QString m_username;

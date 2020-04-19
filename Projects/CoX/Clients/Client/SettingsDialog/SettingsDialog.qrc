@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/SettingsDialog">
+        <file>qmldir</file>
+        <file>SettingsDialog.qml</file>
+        <file>SettingsDialog_General.qml</file>
+        <file>SettingsDialog_Controls.qml</file>
+        <file>SettingsDialog_GraphicsAudio.qml</file>
+        <file>SettingsDialog_Keymapping.qml</file>
+        <file>SettingsDialog_Windows.qml</file>
+    </qresource>
+</RCC>

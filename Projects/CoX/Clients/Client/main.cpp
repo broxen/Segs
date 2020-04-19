@@ -10,15 +10,86 @@
  * @{
  */
 
-#include <QGuiApplication>
-#include <QQmlApplicationEngine>
-#include <QQuickStyle>
-#include <QDebug>
-#include <QLoggingCategory>
-#include <QQmlContext>
-
 #include "Login/Login.h"
 #include "Version/Version.h"
+
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+//#include <QQuickStyle>
+#include <QDate>
+#include <QDebug>
+#include <QFile>
+#include <QDir>
+#include <QLoggingCategory>
+
+#include <mutex>
+
+namespace
+{
+
+// TODO: this code mirrors code in the server, can we refactor and share code?
+void segsClientLogMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    static char log_buffer[4096]={0};
+    static char category_text[256];
+    log_buffer[0] = 0;
+    category_text[0] = 0;
+    if(strcmp(context.category,"default")!=0)
+        snprintf(category_text, sizeof(category_text), "[%s]", context.category);
+
+    QFile client_log_target;
+    QDate todays_date(QDate::currentDate());
+    QString log_path = QDir::current().absolutePath() + QDir::separator() + QString("logs");
+    log_path += QDir::separator() +todays_date.toString("yyyy-MM-dd") + ".log";
+    client_log_target.setFileName(log_path);
+
+    if(!client_log_target.open(QFile::WriteOnly | QFile::Append))
+    {
+        fprintf(stderr,"Failed to open log file in write mode, will procede with console only logging");
+    }
+
+    QByteArray localMsg = msg.toLocal8Bit();
+    std::string timestamp  = QTime::currentTime().toString("hh:mm:ss").toStdString();
+
+    switch (type)
+    {
+        case QtDebugMsg:
+            snprintf(log_buffer, sizeof(log_buffer), "[%s] %sDebug   : %s\n",
+                     timestamp.c_str(), category_text, localMsg.constData());
+            break;
+        case QtInfoMsg:
+            // no prefix or category for informational messages, as these are end-user facing
+            snprintf(log_buffer, sizeof(log_buffer), "[%s] %s\n",
+                     timestamp.c_str(), localMsg.constData());
+            break;
+        case QtWarningMsg:
+            snprintf(log_buffer, sizeof(log_buffer), "[%s] %sWarning : %s\n",
+                     timestamp.c_str(), category_text, localMsg.constData());
+            break;
+        case QtCriticalMsg:
+            snprintf(log_buffer, sizeof(log_buffer), "[%s] %sCritical: %s\n",
+                     timestamp.c_str(), category_text, localMsg.constData());
+            break;
+        case QtFatalMsg:
+            snprintf(log_buffer, sizeof(log_buffer), "[%s] %sFatal: %s\n",
+                     timestamp.c_str(), category_text, localMsg.constData());
+    }
+
+    fprintf(stdout, "%s", log_buffer);
+    fflush(stdout);
+
+    if(client_log_target.isOpen())
+        client_log_target.write(log_buffer);
+
+    if(type == QtFatalMsg)
+    {
+        client_log_target.close();
+        abort();
+    }
+}
+
+} // end of anonymous namespace
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +102,7 @@ int main(int argc, char *argv[])
     }
 
     QLoggingCategory::setFilterRules(QStringLiteral("*.debug=true\nqt.*.debug=false"));
+    qInstallMessageHandler(segsClientLogMessageOutput);
 
     QGuiApplication app(argc, argv);
     app.setOrganizationName(ClientVersion::getProjectOrg());
@@ -44,13 +116,16 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     LoginSystem login_system;
-    // test some values:
+    // set Version String for footer
+    login_system.setVersionString(ClientVersion::getVersionString());
+    // TODO: pull these values from local settings.cfg file
+    // for now, test some values
     login_system.setUsername("segsadmin");
     login_system.setUsernameToggle(true);
-    login_system.setVersionString(ClientVersion::getVersionString());
     // pass context to QML
-    engine.rootContext()->setContextProperty("LoginSystem", &login_system); // the object will be available in QML with name "LoginSystem"
+    engine.rootContext()->setContextProperty("LoginSystem", &login_system);
 
+    engine.addImportPath("qrc:/");
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     if(engine.rootObjects().isEmpty())
         return -1;

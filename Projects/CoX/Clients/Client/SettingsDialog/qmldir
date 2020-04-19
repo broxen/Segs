@@ -1,0 +1,7 @@
+module SettingsDialog
+SettingsDialog 1.0 SettingsDialog.qml
+SettingsDialog_General 1.0 SettingsDialog_General.qml
+SettingsDialog_Controls 1.0 SettingsDialog_Controls.qml
+SettingsDialog_Keymapping 1.0 SettingsDialog_Keymapping.qml
+SettingsDialog_GraphicsAudio 1.0 SettingsDialog_GraphicsAudio.qml
+SettingsDialog_Windows 1.0 SettingsDialog_Windows.qml
